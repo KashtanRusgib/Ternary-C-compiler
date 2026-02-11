@@ -18,5 +18,18 @@
 9. [DONE] TASK-009: Formal verification stub (Isabelle setup). — Created proofs/Ternary.thy with trit datatype, trit_add, trit_mul definitions and 8 correctness lemmas.
 10. [DONE] TASK-010: Compile first seL4 stub to ternary. — 4 tests in tests/test_sel4.c: cap_init parse, simple compile, multi-cap, cap arithmetic through pipeline.
 11. [DONE] TASK-011: Run full regression suite, fix any breaks from recent changes. — 100+ tests across 9 suites. No regressions.
+12. [DONE] TASK-012: Fix linker: add logger.o to all binaries using log_entry. — Commit 283cd13.
+13. [DONE] TASK-013: Fix linker: add ir.o to test_codegen (parser calls IR functions). — All 106 tests pass across 9 suites.
+
+---
+
+## Phase 2: Full seT5
+
+### Tasks
+1. [OPEN] TASK-015: Add pointers/memory to parser/IR (ternary heap/stack).
+2. [OPEN] TASK-016: Syscall stubs for seT5.
+3. [OPEN] TASK-017: Verilog for ternary hardware sim.
+4. [OPEN] TASK-018: Self-host compiler.
+5. [OPEN] TASK-019: Full seL4 compile/verify.
 
 **AGENT DIRECTIVE**: Update this file atomically. No merges without logs.
