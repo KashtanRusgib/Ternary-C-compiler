@@ -210,7 +210,8 @@ TEST(test_verify_full_tree) {
     cap_derive(mem, CAP_RIGHT_READ);
     (void)thr;
 
-    ASSERT_EQ(cap_tree_count(root), 7);
+    /* root + ep + mem + thr + ep_child + mem_child = 6 */
+    ASSERT_EQ(cap_tree_count(root), 6);
     ASSERT_TRUE(verify_no_escalation(root));
 
     /* Revoke memory subtree */

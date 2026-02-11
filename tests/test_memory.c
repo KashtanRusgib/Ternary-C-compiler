@@ -202,10 +202,7 @@ TEST(test_parse_subtraction) {
     ASSERT_NOT_NULL(prog);
     Expr *fn = prog->params[0];
     ASSERT_EQ(fn->body->type, NODE_RETURN);
-    ASSERT_EQ(fn->body->left->type, NODE_CONST); /* constant-folded to 7 */
-    /* Actually parse_program doesn't call optimize... let's check raw */
-    /* No, it doesn't fold. The body->left should be BINOP. */
-    /* Wait — parse_program doesn't call optimize. So it should be NODE_BINOP. */
+    /* parse_program doesn't call optimize, so 10-3 stays as BINOP */
     ASSERT_EQ(fn->body->left->type, NODE_BINOP);
     ASSERT_EQ(fn->body->left->op, OP_IR_SUB);
     expr_free(prog);
