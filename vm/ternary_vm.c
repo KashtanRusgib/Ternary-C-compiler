@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "../include/vm.h"
+#include "../include/logger.h"
 
 // Phase 1 (MVP): Use int stack for correct decimal results.
 // Phase 2+: Switch to trit arrays with trit_add/trit_mul.
@@ -16,6 +17,7 @@ static int pop(void) {
 
 void vm_run(unsigned char *bytecode, size_t len) {
     sp = 0;  // Reset stack
+    LOG_DEBUG_MSG("VM", "TASK-006", "vm_run entered");
 
     for (size_t pc = 0; pc < len; ) {
         switch (bytecode[pc++]) {
@@ -42,7 +44,7 @@ void vm_run(unsigned char *bytecode, size_t len) {
                 }
                 break;
             }
-            case OP_HALT: printf("Result: %d\n", pop()); return;
+            case OP_HALT: printf("Result: %d\n", pop()); LOG_DEBUG_MSG("VM", "TASK-006", "vm_run HALT"); return;
         }
     }
 }

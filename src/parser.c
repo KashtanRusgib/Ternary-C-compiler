@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "../include/parser.h"
 #include "../include/ir.h"
+#include "../include/logger.h"
 
 Token tokens[MAX_TOKENS];
 int token_idx = 0;
@@ -110,6 +111,8 @@ void tokenize(const char *source) {
     }
 
     tokens[token_idx++] = (Token){TOK_EOF, 0};
+
+    LOG_DEBUG_MSG("Lexer", "TASK-006", "tokenize complete");
 }
 
 // Parse to AST (postfix for now)
@@ -125,6 +128,7 @@ static int perror_flag;   /* Parser error flag */
 
 static void parser_error(const char *msg) {
     fprintf(stderr, "parser error: %s (at token %d)\n", msg, pidx);
+    log_entry(LOG_ERROR, "Parser", "TASK-004", msg, NULL);
     perror_flag = 1;
 }
 
@@ -312,6 +316,7 @@ static Expr *parse_func_def_r(void) {
 }
 
 Expr *parse_program(const char *source) {
+    LOG_DEBUG_MSG("Parser", "TASK-004", "parse_program entered");
     tokenize(source);
     pidx = 0;
     perror_flag = 0;

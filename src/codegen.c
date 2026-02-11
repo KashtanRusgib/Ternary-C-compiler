@@ -2,6 +2,7 @@
 #include "../include/codegen.h"
 #include "../include/parser.h"
 #include "../include/vm.h"
+#include "../include/logger.h"
 
 unsigned char bytecode[MAX_BYTECODE];
 size_t bc_idx = 0;
@@ -12,6 +13,7 @@ static void emit(unsigned char op) {
 
 void codegen(void) {
     bc_idx = 0;
+    LOG_DEBUG_MSG("Codegen", "TASK-006", "codegen entered");
 
     // Walk tokens and generate bytecode using operator precedence.
     // For the MVP, we handle expressions of the form:
@@ -75,4 +77,5 @@ void codegen(void) {
     }
 
     emit(OP_HALT);
+    LOG_DEBUG_MSG("Codegen", "TASK-006", "codegen complete");
 }

@@ -7,6 +7,10 @@
 
 #include "../include/test_harness.h"
 #include "../include/logger.h"
+#include "../include/parser.h"
+#include "../include/codegen.h"
+#include "../include/vm.h"
+#include "../include/ir.h"
 #include <string.h>
 #include <unistd.h>
 
@@ -174,6 +178,100 @@ TEST(test_log_null_params) {
     unlink(tmplog);
 }
 
+/* ---- TASK-006: Verify logging appears in src functions ---- */
+
+TEST(test_log_in_lexer) {
+    const char *tmplog = "/tmp/test_logger_lexer.log";
+    unlink(tmplog);
+
+    logger_init(tmplog);
+    logger_set_level(LOG_DEBUG);
+
+    /* tokenize will call LOG_DEBUG_MSG("Lexer", ...) */
+    tokenize("42");
+
+    logger_close();
+
+    read_file_contents(tmplog);
+    ASSERT_TRUE(strstr(file_buf, "[Lexer]") != NULL);
+    ASSERT_TRUE(strstr(file_buf, "tokenize complete") != NULL);
+
+    unlink(tmplog);
+}
+
+TEST(test_log_in_codegen) {
+    const char *tmplog = "/tmp/test_logger_codegen.log";
+    unlink(tmplog);
+
+    logger_init(tmplog);
+    logger_set_level(LOG_DEBUG);
+
+    tokenize("1 + 2");
+    parse();
+    codegen();
+
+    logger_close();
+
+    read_file_contents(tmplog);
+    ASSERT_TRUE(strstr(file_buf, "[Codegen]") != NULL);
+    ASSERT_TRUE(strstr(file_buf, "codegen entered") != NULL);
+    ASSERT_TRUE(strstr(file_buf, "codegen complete") != NULL);
+
+    unlink(tmplog);
+}
+
+TEST(test_log_in_vm) {
+    const char *tmplog = "/tmp/test_logger_vm.log";
+    unlink(tmplog);
+
+    logger_init(tmplog);
+    logger_set_level(LOG_DEBUG);
+
+    /* Build simple bytecode: PUSH 5, HALT */
+    unsigned char bc[] = { 0 /* OP_PUSH */, 5, 5 /* OP_HALT */ };
+    /* Redirect stdout so Result: doesn't pollute test */
+    FILE *devnull = fopen("/dev/null", "w");
+    int saved = dup(fileno(stdout));
+    fflush(stdout);
+    dup2(fileno(devnull), fileno(stdout));
+
+    vm_run(bc, sizeof(bc));
+
+    fflush(stdout);
+    dup2(saved, fileno(stdout));
+    close(saved);
+    fclose(devnull);
+
+    logger_close();
+
+    read_file_contents(tmplog);
+    ASSERT_TRUE(strstr(file_buf, "[VM]") != NULL);
+    ASSERT_TRUE(strstr(file_buf, "vm_run entered") != NULL);
+    ASSERT_TRUE(strstr(file_buf, "vm_run HALT") != NULL);
+
+    unlink(tmplog);
+}
+
+TEST(test_log_in_parser) {
+    const char *tmplog = "/tmp/test_logger_parser.log";
+    unlink(tmplog);
+
+    logger_init(tmplog);
+    logger_set_level(LOG_DEBUG);
+
+    /* parse_program logs "parse_program entered" */
+    Expr *prog = parse_program("int main() { return 1; }");
+    if (prog) expr_free(prog);
+
+    logger_close();
+
+    read_file_contents(tmplog);
+    ASSERT_TRUE(strstr(file_buf, "[Parser]") != NULL);
+    ASSERT_TRUE(strstr(file_buf, "parse_program entered") != NULL);
+
+    unlink(tmplog);
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("Logger");
 
@@ -187,6 +285,10 @@ int main(void) {
     RUN_TEST(test_log_level_filter);
     RUN_TEST(test_log_multiple_entries);
     RUN_TEST(test_log_null_params);
+    RUN_TEST(test_log_in_lexer);
+    RUN_TEST(test_log_in_codegen);
+    RUN_TEST(test_log_in_vm);
+    RUN_TEST(test_log_in_parser);
 
     TEST_SUITE_END();
 }
