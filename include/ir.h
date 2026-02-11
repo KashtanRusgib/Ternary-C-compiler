@@ -16,9 +16,13 @@
 
 /* AST node types */
 typedef enum {
-    NODE_CONST,   /* Integer constant */
-    NODE_VAR,     /* Variable reference */
-    NODE_BINOP    /* Binary operation */
+    NODE_CONST,     /* Integer constant */
+    NODE_VAR,       /* Variable reference */
+    NODE_BINOP,     /* Binary operation */
+    NODE_FUNC_DEF,  /* Function definition */
+    NODE_FUNC_CALL, /* Function call */
+    NODE_RETURN,    /* Return statement */
+    NODE_PROGRAM    /* Top-level program (list of functions) */
 } NodeType;
 
 /* Binary operator types */
@@ -31,10 +35,13 @@ typedef enum {
 typedef struct Expr {
     NodeType type;
     int val;              /* For NODE_CONST */
-    char *name;           /* For NODE_VAR */
+    char *name;           /* For NODE_VAR, NODE_FUNC_DEF, NODE_FUNC_CALL */
     OpType op;            /* For NODE_BINOP */
-    struct Expr *left;    /* For NODE_BINOP */
-    struct Expr *right;   /* For NODE_BINOP */
+    struct Expr *left;    /* For NODE_BINOP left operand / NODE_RETURN expr */
+    struct Expr *right;   /* For NODE_BINOP right operand */
+    struct Expr *body;    /* For NODE_FUNC_DEF: function body */
+    struct Expr **params; /* FUNC_DEF: param list / FUNC_CALL: args / PROGRAM: funcs */
+    int param_count;      /* Number of params / args / funcs */
 } Expr;
 
 /* Create a constant node */
@@ -48,6 +55,21 @@ Expr *create_binop(OpType op, Expr *left, Expr *right);
 
 /* Optimize: constant folding pass (recursive) */
 void optimize(Expr *e);
+
+/* Create a function definition node */
+Expr *create_func_def(const char *name, Expr **params, int param_count, Expr *body);
+
+/* Create a function call node */
+Expr *create_func_call(const char *name, Expr **args, int arg_count);
+
+/* Create a return statement node */
+Expr *create_return(Expr *expr);
+
+/* Create a program node (container for function definitions) */
+Expr *create_program(void);
+
+/* Add a function definition to a program node */
+void program_add_func(Expr *prog, Expr *func);
 
 /* Free an expression tree */
 void expr_free(Expr *e);

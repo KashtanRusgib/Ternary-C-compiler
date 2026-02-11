@@ -23,11 +23,13 @@ typedef enum {
     TOK_LBRACE,     /* { */
     TOK_RBRACE,     /* } */
     TOK_SEMI,       /* ; */
+    TOK_COMMA,      /* , */
 
     /* Keywords */
     TOK_FOR,        /* for */
     TOK_WHILE,      /* while */
     TOK_INT_KW,     /* int (keyword, distinct from TOK_INT literal) */
+    TOK_RETURN,     /* return */
 
     /* Identifiers */
     TOK_IDENT,      /* identifier */
@@ -48,5 +50,12 @@ extern int token_idx;
 
 void tokenize(const char *source);
 void parse(void);
+
+#define MAX_TOKEN_NAME 64
+extern char token_names[MAX_TOKENS][MAX_TOKEN_NAME];
+
+/* Function/expression parser — returns AST (TASK-004) */
+struct Expr;
+struct Expr *parse_program(const char *source);
 
 #endif

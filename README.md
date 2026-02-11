@@ -91,3 +91,11 @@ docs/
 5. **Phase 5:** Self-hosting compiler, formal verification with Isabelle AFP
 
 **AGENT DIRECTIVE**: If you're an agent, read docs/AGENT_PROMPT.md first. Update this README only if architecture changes, and verify with tests.
+
+## Build Stats
+- **Test suites**: 8 (trit, lexer, parser, codegen, vm, logger, ir, integration)
+- **Total tests**: 97+
+- **Lines of code**: ~2200 (src + include + tests)
+- **Build**: `make all` with `gcc -Wall -Wextra`
+- **CI**: `make ci` (test + lint)
+- **Supported features**: Balanced ternary arithmetic, 9-trit word ops, lexer (keywords/idents/operators), recursive descent function parser, constant folding optimizer, stack-based VM with JMP/COND_JMP

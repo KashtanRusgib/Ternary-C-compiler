@@ -9,7 +9,7 @@ VM_OBJS    = vm/ternary_vm.o
 LIB_OBJS   = src/parser.o src/codegen.o src/logger.o src/ir.o $(VM_OBJS)
 
 # ---- Test binaries ----
-TEST_BINS  = test_trit test_lexer test_codegen test_vm test_logger test_ir test_integration
+TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_integration
 
 # ---- Default target ----
 all: ternary_compiler vm_test $(TEST_BINS)
@@ -26,7 +26,10 @@ vm_test: vm/vm_test.o $(VM_OBJS)
 test_trit: tests/test_trit.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_lexer: tests/test_lexer.o src/parser.o
+test_lexer: tests/test_lexer.o src/parser.o src/ir.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_parser: tests/test_parser.o src/parser.o src/ir.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 test_codegen: tests/test_codegen.o src/parser.o src/codegen.o $(VM_OBJS)
@@ -50,7 +53,7 @@ test_integration: tests/test_integration.o $(LIB_OBJS)
 
 # ---- Dependencies ----
 src/main.o:           src/main.c include/parser.h include/codegen.h include/vm.h include/ir.h
-src/parser.o:         src/parser.c include/parser.h
+src/parser.o:         src/parser.c include/parser.h include/ir.h
 src/codegen.o:        src/codegen.c include/codegen.h include/parser.h include/vm.h
 src/logger.o:         src/logger.c include/logger.h
 src/ir.o:             src/ir.c include/ir.h
@@ -58,6 +61,7 @@ vm/ternary_vm.o:      vm/ternary_vm.c include/vm.h include/ternary.h
 vm/vm_test.o:         vm/vm_test.c include/vm.h
 tests/test_trit.o:    tests/test_trit.c include/test_harness.h include/ternary.h
 tests/test_lexer.o:   tests/test_lexer.c include/test_harness.h include/parser.h
+tests/test_parser.o:  tests/test_parser.c include/test_harness.h include/parser.h include/ir.h
 tests/test_codegen.o: tests/test_codegen.c include/test_harness.h include/parser.h include/codegen.h include/vm.h
 tests/test_vm.o:      tests/test_vm.c include/test_harness.h include/vm.h
 tests/test_logger.o:  tests/test_logger.c include/test_harness.h include/logger.h

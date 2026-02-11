@@ -152,6 +152,64 @@ TEST(test_add_exhaustive) {
     }
 }
 
+/* ---- Trit word operations (TASK-002) ---- */
+
+TEST(test_int_to_trit_word_basic) {
+    trit_word w;
+    int_to_trit_word(0, w);
+    ASSERT_EQ(trit_word_to_int(w), 0);
+
+    int_to_trit_word(1, w);
+    ASSERT_EQ(trit_word_to_int(w), 1);
+
+    int_to_trit_word(-1, w);
+    ASSERT_EQ(trit_word_to_int(w), -1);
+
+    int_to_trit_word(13, w);
+    ASSERT_EQ(trit_word_to_int(w), 13);
+}
+
+TEST(test_trit_word_add_simple) {
+    trit_word a, b, res;
+    int_to_trit_word(2, a);
+    int_to_trit_word(3, b);
+    trit_word_add(a, b, res);
+    ASSERT_EQ(trit_word_to_int(res), 5);
+}
+
+TEST(test_trit_word_add_carry) {
+    trit_word a, b, res;
+    int_to_trit_word(100, a);
+    int_to_trit_word(200, b);
+    trit_word_add(a, b, res);
+    ASSERT_EQ(trit_word_to_int(res), 300);
+}
+
+TEST(test_trit_word_mul_simple) {
+    trit_word a, b, res;
+    int_to_trit_word(4, a);
+    int_to_trit_word(3, b);
+    trit_word_mul(a, b, res);
+    ASSERT_EQ(trit_word_to_int(res), 12);
+}
+
+TEST(test_trit_word_mul_negative) {
+    trit_word a, b, res;
+    int_to_trit_word(-3, a);
+    int_to_trit_word(7, b);
+    trit_word_mul(a, b, res);
+    ASSERT_EQ(trit_word_to_int(res), -21);
+}
+
+TEST(test_trit_word_roundtrip) {
+    trit_word w;
+    int vals[] = {0, 1, -1, 13, -13, 42, -42, 100, -100, 9841, -9841};
+    for (int i = 0; i < 11; i++) {
+        int_to_trit_word(vals[i], w);
+        ASSERT_EQ(trit_word_to_int(w), vals[i]);
+    }
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("Trit Operations");
 
@@ -171,6 +229,12 @@ int main(void) {
     RUN_TEST(test_max_basic);
     RUN_TEST(test_max_equal);
     RUN_TEST(test_add_exhaustive);
+    RUN_TEST(test_int_to_trit_word_basic);
+    RUN_TEST(test_trit_word_add_simple);
+    RUN_TEST(test_trit_word_add_carry);
+    RUN_TEST(test_trit_word_mul_simple);
+    RUN_TEST(test_trit_word_mul_negative);
+    RUN_TEST(test_trit_word_roundtrip);
 
     TEST_SUITE_END();
 }

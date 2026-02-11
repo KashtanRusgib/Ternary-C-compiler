@@ -55,6 +55,7 @@ vm_test
 test_basic
 test_trit
 test_lexer
+test_parser
 test_codegen
 test_vm
 test_logger
