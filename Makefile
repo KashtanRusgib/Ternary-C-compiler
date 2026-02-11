@@ -19,23 +19,23 @@ ternary_compiler: $(SRC_OBJS) $(VM_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 # ---- Standalone VM test ----
-vm_test: vm/vm_test.o $(VM_OBJS)
+vm_test: vm/vm_test.o $(VM_OBJS) src/logger.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 # ---- Test binaries ----
 test_trit: tests/test_trit.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_lexer: tests/test_lexer.o src/parser.o src/ir.o
+test_lexer: tests/test_lexer.o src/parser.o src/ir.o src/logger.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_parser: tests/test_parser.o src/parser.o src/ir.o
+test_parser: tests/test_parser.o src/parser.o src/ir.o src/logger.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_codegen: tests/test_codegen.o src/parser.o src/codegen.o $(VM_OBJS)
+test_codegen: tests/test_codegen.o src/parser.o src/codegen.o src/logger.o $(VM_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_vm: tests/test_vm.o $(VM_OBJS)
+test_vm: tests/test_vm.o $(VM_OBJS) src/logger.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 test_logger: tests/test_logger.o $(LIB_OBJS)
