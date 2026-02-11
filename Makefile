@@ -32,7 +32,7 @@ test_lexer: tests/test_lexer.o src/parser.o src/ir.o src/logger.o
 test_parser: tests/test_parser.o src/parser.o src/ir.o src/logger.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_codegen: tests/test_codegen.o src/parser.o src/codegen.o src/logger.o $(VM_OBJS)
+test_codegen: tests/test_codegen.o src/parser.o src/codegen.o src/ir.o src/logger.o $(VM_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 test_vm: tests/test_vm.o $(VM_OBJS) src/logger.o
