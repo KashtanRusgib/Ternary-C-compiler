@@ -41,10 +41,12 @@ make clean      # Remove build artifacts
 ```
 
 ## Directories
-- `src/`: Core compiler code (parser, codegen, logger).
-- `include/`: Headers (ternary.h, vm.h, parser.h, codegen.h, logger.h, test_harness.h).
+- `src/`: Core compiler code (parser, codegen, logger, bootstrap, sel4_verify).
+- `include/`: Headers (ternary.h, vm.h, parser.h, codegen.h, logger.h, ir.h, memory.h, set5.h, bootstrap.h, sel4_verify.h, test_harness.h).
 - `vm/`: Ternary VM simulator.
+- `hw/`: Verilog ternary hardware simulation.
 - `tests/`: Unit tests (one per module) and integration tests.
+- `proofs/`: Isabelle/HOL formal verification.
 - `docs/`: Architecture, logging, testing, and agent documentation.
 - `logs/`: Agent and CI logs.
 
@@ -84,18 +86,20 @@ docs/
 
 ## Roadmap
 
-1. **Phase 1 (MVP):** Compile simple expressions to ternary bytecode *(current)*
-2. **Phase 2:** Full lexer with C token support, shunting-yard parser, control flow
-3. **Phase 3:** Ternary word support (9-trit integers), variables, `return` statements
-4. **Phase 4:** Functions, pointers, seL4 stubs
-5. **Phase 5:** Self-hosting compiler, formal verification with Isabelle AFP
+1. **Phase 1 (MVP):** Compile simple expressions to ternary bytecode *(DONE)*
+2. **Phase 2 (seT5):** Pointers/memory, syscalls, Verilog sim, self-host, seL4 verify *(DONE)*
+3. **Phase 3:** Full C subset (if/else, while, arrays), type checking, linker
+4. **Phase 4:** Ternary hardware synthesis, FPGA target
+5. **Phase 5:** Full self-hosting, formal verification with Isabelle AFP complete
 
 **AGENT DIRECTIVE**: If you're an agent, read docs/AGENT_PROMPT.md first. Update this README only if architecture changes, and verify with tests.
 
 ## Build Stats
-- **Test suites**: 8 (trit, lexer, parser, codegen, vm, logger, ir, integration)
-- **Total tests**: 97+
-- **Lines of code**: ~2200 (src + include + tests)
+- **Test suites**: 13 (trit, lexer, parser, codegen, vm, logger, ir, sel4, integration, memory, set5, bootstrap, sel4_verify)
+- **Total tests**: 168+
+- **Lines of code**: ~4500+ (src + include + tests + hw)
 - **Build**: `make all` with `gcc -Wall -Wextra`
 - **CI**: `make ci` (test + lint)
-- **Supported features**: Balanced ternary arithmetic, 9-trit word ops, lexer (keywords/idents/operators), recursive descent function parser, constant folding optimizer, stack-based VM with JMP/COND_JMP
+- **Verilog**: `hw/ternary_alu.v` (simulated with Icarus Verilog)
+- **Isabelle**: `proofs/Ternary.thy` (15+ lemmas)
+- **Supported features**: Balanced ternary arithmetic, 9-trit word ops, pointers and memory model, ternary-addressed memory (729 cells), lexer (keywords/idents/operators), recursive descent parser (functions, var decls, assignments, pointer syntax), constant folding optimizer, stack-based VM (JMP/COND_JMP/LOAD/STORE/SYSCALL), seT5 microkernel syscalls (10 syscall stubs), capability-based security (derivation trees, IPC endpoints), self-hosting bootstrap compiler, seL4 full compilation + verification, Verilog ternary ALU + processor

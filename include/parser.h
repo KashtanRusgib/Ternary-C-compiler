@@ -12,10 +12,12 @@ typedef enum {
 
     /* Operators */
     TOK_PLUS,       /* + */
+    TOK_MINUS,      /* - */
     TOK_MUL,        /* * */
     TOK_PLUS_PLUS,  /* ++ */
     TOK_EQ,         /* = */
     TOK_LT,         /* < */
+    TOK_AMP,        /* & (address-of) */
 
     /* Delimiters */
     TOK_LPAREN,     /* ( */

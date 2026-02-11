@@ -62,6 +62,10 @@ test_logger
 test_ir
 test_sel4
 test_integration
+test_memory
+test_set5
+test_bootstrap
+test_sel4_verify
 
 # Logs (keep .gitkeep)
 logs/*.log

@@ -2,14 +2,14 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude
 
 # ---- Source objects ----
-SRC_OBJS   = src/main.o src/parser.o src/codegen.o src/logger.o src/ir.o
+SRC_OBJS   = src/main.o src/parser.o src/codegen.o src/logger.o src/ir.o src/bootstrap.o src/sel4_verify.o
 VM_OBJS    = vm/ternary_vm.o
 
 # ---- Shared objects (used by tests) ----
 LIB_OBJS   = src/parser.o src/codegen.o src/logger.o src/ir.o $(VM_OBJS)
 
 # ---- Test binaries ----
-TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_sel4 test_integration
+TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_sel4 test_integration test_memory test_set5 test_bootstrap test_sel4_verify
 
 # ---- Default target ----
 all: ternary_compiler vm_test $(TEST_BINS)
@@ -50,6 +50,18 @@ test_sel4: tests/test_sel4.o $(LIB_OBJS)
 test_integration: tests/test_integration.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
+test_memory: tests/test_memory.o $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_set5: tests/test_set5.o $(VM_OBJS) src/logger.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_bootstrap: tests/test_bootstrap.o src/bootstrap.o $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_sel4_verify: tests/test_sel4_verify.o src/sel4_verify.o $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
 # ---- Generic rule for .c -> .o ----
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -71,6 +83,12 @@ tests/test_logger.o:  tests/test_logger.c include/test_harness.h include/logger.
 tests/test_ir.o:      tests/test_ir.c include/test_harness.h include/ir.h
 tests/test_sel4.o:    tests/test_sel4.c include/test_harness.h include/parser.h include/codegen.h include/vm.h include/ir.h include/logger.h
 tests/test_integration.o: tests/test_integration.c include/test_harness.h include/parser.h include/codegen.h include/vm.h
+tests/test_memory.o:      tests/test_memory.c include/test_harness.h include/ternary.h include/memory.h include/vm.h include/ir.h include/parser.h
+tests/test_set5.o:        tests/test_set5.c include/test_harness.h include/vm.h include/set5.h
+tests/test_bootstrap.o:   tests/test_bootstrap.c include/test_harness.h include/bootstrap.h include/vm.h include/ir.h
+tests/test_sel4_verify.o: tests/test_sel4_verify.c include/test_harness.h include/sel4_verify.h include/vm.h
+src/bootstrap.o:          src/bootstrap.c include/bootstrap.h include/ir.h include/parser.h include/codegen.h include/vm.h include/logger.h
+src/sel4_verify.o:        src/sel4_verify.c include/sel4_verify.h include/parser.h include/codegen.h include/vm.h include/logger.h
 
 # ---- Test targets ----
 test: $(TEST_BINS)

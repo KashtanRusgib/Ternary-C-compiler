@@ -22,13 +22,18 @@ typedef enum {
     NODE_FUNC_DEF,  /* Function definition */
     NODE_FUNC_CALL, /* Function call */
     NODE_RETURN,    /* Return statement */
-    NODE_PROGRAM    /* Top-level program (list of functions) */
+    NODE_PROGRAM,   /* Top-level program (list of functions) */
+    NODE_DEREF,     /* Pointer dereference: *expr */
+    NODE_ADDR_OF,   /* Address-of: &var */
+    NODE_ASSIGN,    /* Assignment: lhs = rhs */
+    NODE_VAR_DECL   /* Variable declaration: int x = expr */
 } NodeType;
 
 /* Binary operator types */
 typedef enum {
     OP_IR_ADD,
-    OP_IR_MUL
+    OP_IR_MUL,
+    OP_IR_SUB
 } OpType;
 
 /* Expression AST node */
@@ -70,6 +75,18 @@ Expr *create_program(void);
 
 /* Add a function definition to a program node */
 void program_add_func(Expr *prog, Expr *func);
+
+/* Create a dereference node (*expr) */
+Expr *create_deref(Expr *expr);
+
+/* Create an address-of node (&var) */
+Expr *create_addr_of(Expr *var);
+
+/* Create an assignment node (lhs = rhs) */
+Expr *create_assign(Expr *lhs, Expr *rhs);
+
+/* Create a variable declaration node (int x = expr) */
+Expr *create_var_decl(const char *name, Expr *init);
 
 /* Free an expression tree */
 void expr_free(Expr *e);

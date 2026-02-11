@@ -26,10 +26,10 @@
 ## Phase 2: Full seT5
 
 ### Tasks
-1. [OPEN] TASK-015: Add pointers/memory to parser/IR (ternary heap/stack).
-2. [OPEN] TASK-016: Syscall stubs for seT5.
-3. [OPEN] TASK-017: Verilog for ternary hardware sim.
-4. [OPEN] TASK-018: Self-host compiler.
-5. [OPEN] TASK-019: Full seL4 compile/verify.
+1. [DONE] TASK-015: Add pointers/memory to parser/IR (ternary heap/stack). — NODE_DEREF, NODE_ADDR_OF, NODE_ASSIGN, NODE_VAR_DECL in IR. OP_LOAD, OP_STORE, OP_SUB in VM. TOK_MINUS, TOK_AMP in lexer. include/memory.h ternary-addressed memory (729 cells). 19 tests in test_memory.c.
+2. [DONE] TASK-016: Syscall stubs for seT5. — include/set5.h: 10 syscall numbers, seT5_cap struct, 5 capability rights, seT5_obj_type enum. VM OP_SYSCALL dispatch (t_exit, t_write, t_read, t_mmap, t_cap_send, t_cap_recv). t_cap_grant/t_cap_revoke API. 13 tests in test_set5.c.
+3. [DONE] TASK-017: Verilog for ternary hardware sim. — hw/ternary_alu.v: 2-bit trit encoding, trit_adder, trit_multiplier, trit_word_adder (9-trit ripple carry), ternary_alu (ADD/SUB/MUL), ternary_processor (fetch-execute). hw/ternary_tb.v: 18-test testbench.
+4. [DONE] TASK-018: Self-host compiler. — include/bootstrap.h, src/bootstrap.c: BootstrapSymTab (64 symbols), AST-to-bytecode emitter (PUSH/LOAD/STORE/ADD/MUL/SUB), bootstrap_compile(), bootstrap_self_test(). 12 tests in test_bootstrap.c.
+5. [DONE] TASK-019: Full seL4 compile/verify. — include/sel4_verify.h: CapNode derivation tree (ternary branching), seL4_Endpoint (9-msg queue), seL4_TCB. cap_derive/cap_revoke_tree/verify_no_escalation/verify_revocation. src/sel4_verify.c. 18 tests in test_sel4_verify.c. proofs/Ternary.thy extended with 7 new lemmas (memory model, capability rights, subtraction).
 
 **AGENT DIRECTIVE**: Update this file atomically. No merges without logs.

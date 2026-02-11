@@ -82,6 +82,8 @@ void optimize(Expr *e) {
                     result = e->left->val + e->right->val;
                 } else if (e->op == OP_IR_MUL) {
                     result = e->left->val * e->right->val;
+                } else if (e->op == OP_IR_SUB) {
+                    result = e->left->val - e->right->val;
                 }
 
                 /* Convert this node to a constant */
@@ -114,6 +116,22 @@ void optimize(Expr *e) {
             for (int i = 0; i < e->param_count; i++) {
                 optimize(e->params[i]);
             }
+            break;
+
+        case NODE_DEREF:
+            optimize(e->left);
+            break;
+
+        case NODE_ADDR_OF:
+            /* nothing to fold */
+            break;
+
+        case NODE_ASSIGN:
+            optimize(e->right);
+            break;
+
+        case NODE_VAR_DECL:
+            if (e->left) optimize(e->left);
             break;
     }
 }
@@ -213,4 +231,64 @@ void program_add_func(Expr *prog, Expr *func) {
         exit(1);
     }
     prog->params[prog->param_count - 1] = func;
+}
+
+Expr *create_deref(Expr *expr) {
+    Expr *e = (Expr *)malloc(sizeof(Expr));
+    if (e == NULL) { fprintf(stderr, "ir: malloc failed\n"); exit(1); }
+    e->type = NODE_DEREF;
+    e->val = 0;
+    e->name = NULL;
+    e->op = OP_IR_ADD;
+    e->left = expr;
+    e->right = NULL;
+    e->body = NULL;
+    e->params = NULL;
+    e->param_count = 0;
+    return e;
+}
+
+Expr *create_addr_of(Expr *var) {
+    Expr *e = (Expr *)malloc(sizeof(Expr));
+    if (e == NULL) { fprintf(stderr, "ir: malloc failed\n"); exit(1); }
+    e->type = NODE_ADDR_OF;
+    e->val = 0;
+    e->name = NULL;
+    e->op = OP_IR_ADD;
+    e->left = var;
+    e->right = NULL;
+    e->body = NULL;
+    e->params = NULL;
+    e->param_count = 0;
+    return e;
+}
+
+Expr *create_assign(Expr *lhs, Expr *rhs) {
+    Expr *e = (Expr *)malloc(sizeof(Expr));
+    if (e == NULL) { fprintf(stderr, "ir: malloc failed\n"); exit(1); }
+    e->type = NODE_ASSIGN;
+    e->val = 0;
+    e->name = NULL;
+    e->op = OP_IR_ADD;
+    e->left = lhs;
+    e->right = rhs;
+    e->body = NULL;
+    e->params = NULL;
+    e->param_count = 0;
+    return e;
+}
+
+Expr *create_var_decl(const char *name, Expr *init) {
+    Expr *e = (Expr *)malloc(sizeof(Expr));
+    if (e == NULL) { fprintf(stderr, "ir: malloc failed\n"); exit(1); }
+    e->type = NODE_VAR_DECL;
+    e->val = 0;
+    e->name = strdup(name);
+    e->op = OP_IR_ADD;
+    e->left = init;
+    e->right = NULL;
+    e->body = NULL;
+    e->params = NULL;
+    e->param_count = 0;
+    return e;
 }
