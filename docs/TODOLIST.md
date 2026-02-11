@@ -1,0 +1,21 @@
+# TODO List
+
+## Rules (Forcefully Asserted)
+- **CLAIM TASKS**: Add [LOCKED: AgentRole @ Timestamp] to claim. Only one agent per task.
+- **COMPLETE**: Mark [DONE: CommitHash] with git diff logged.
+- **PARALLEL**: Pick unlocked tasks. If stuck, spawn sub-tasks.
+- **VERIFICATION**: **MUST** pass unit tests before DONE. If fail, [REVERTED: Reason].
+
+### Tasks (Prioritized)
+1. [OPEN] TASK-001: Expand lexer to handle loops (for/while). Add unit tests.
+2. [OPEN] TASK-002: Implement trit array for multi-trit words in ternary.h.
+3. [OPEN] TASK-003: Add control flow to VM (JMP, COND_JMP).
+4. [OPEN] TASK-004: Write parser for functions. Test with simple main().
+5. [OPEN] TASK-005: Optimize constant folding in IR.
+6. [OPEN] TASK-006: Integrate logging in all src files.
+7. [OPEN] TASK-007: Update README with build stats.
+8. [OPEN] TASK-008: Add CI script for tests (Makefile target).
+9. [OPEN] TASK-009: Formal verification stub (Isabelle setup).
+10. [OPEN] TASK-010: Compile first seL4 stub to ternary.
+
+**AGENT DIRECTIVE**: Update this file atomically. No merges without logs.

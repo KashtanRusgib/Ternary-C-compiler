@@ -48,6 +48,20 @@
 .tmp_versions/
 modules.order
 Module.symvers
+
+# Project binaries
+ternary_compiler
+vm_test
+test_basic
+test_trit
+test_lexer
+test_codegen
+test_vm
+test_logger
+test_integration
+
+# Logs (keep .gitkeep)
+logs/*.log
 Mkfile.old
 dkms.conf
 
