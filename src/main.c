@@ -4,6 +4,7 @@
 #include "../include/parser.h"
 #include "../include/codegen.h"
 #include "../include/vm.h"
+#include "../include/ir.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {

@@ -58,6 +58,7 @@ test_lexer
 test_codegen
 test_vm
 test_logger
+test_ir
 test_integration
 
 # Logs (keep .gitkeep)
