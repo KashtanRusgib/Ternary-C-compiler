@@ -118,6 +118,27 @@ TEST(test_bootstrap_pointer_syntax) {
     ASSERT_TRUE(len > 0);
 }
 
+TEST(test_bootstrap_roundtrip) {
+    /* Round-trip test: compile same source twice, verify identical bytecode */
+    const char *src = "int main() { int a = 2 + 3; return a * a; }";
+    unsigned char code1[256], code2[256];
+    int len1 = bootstrap_compile(src, code1, 256);
+    int len2 = bootstrap_compile(src, code2, 256);
+    ASSERT_TRUE(len1 > 0);
+    ASSERT_EQ(len1, len2);
+    for (int i = 0; i < len1; i++) {
+        ASSERT_EQ(code1[i], code2[i]);
+    }
+}
+
+TEST(test_bootstrap_error_handling) {
+    /* Empty source should still produce something (empty program) or fail gracefully */
+    unsigned char code[256];
+    int len = bootstrap_compile("", code, 256);
+    /* Either returns >0 (empty program with HALT) or -1 (parse error) — both are valid */
+    ASSERT_TRUE(len == -1 || len > 0);
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("Bootstrap Self-Host (TASK-018)");
     /* Symbol table */
@@ -133,6 +154,8 @@ int main(void) {
     RUN_TEST(test_bootstrap_subtraction);
     RUN_TEST(test_bootstrap_nested_expr);
     RUN_TEST(test_bootstrap_pointer_syntax);
+    RUN_TEST(test_bootstrap_roundtrip);
+    RUN_TEST(test_bootstrap_error_handling);
     /* Self-test */
     RUN_TEST(test_bootstrap_self_test);
     TEST_SUITE_END();
