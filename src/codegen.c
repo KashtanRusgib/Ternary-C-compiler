@@ -51,11 +51,12 @@ void codegen(void) {
         emit(OP_MUL);
     }
 
-    // Handle remaining terms separated by +
-    while (tokens[i].type == TOK_PLUS) {
-        i++; // skip +
+    // Handle remaining terms separated by + or -
+    while (tokens[i].type == TOK_PLUS || tokens[i].type == TOK_MINUS) {
+        int is_sub = (tokens[i].type == TOK_MINUS);
+        i++; // skip + or -
         if (tokens[i].type != TOK_INT) {
-            fprintf(stderr, "codegen: expected integer after +\n");
+            fprintf(stderr, "codegen: expected integer after %c\n", is_sub ? '-' : '+');
             return;
         }
         emit(OP_PUSH); emit((unsigned char)tokens[i].value);
@@ -73,7 +74,7 @@ void codegen(void) {
             emit(OP_MUL);
         }
 
-        emit(OP_ADD);
+        emit(is_sub ? OP_SUB : OP_ADD);
     }
 
     emit(OP_HALT);

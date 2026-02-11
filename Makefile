@@ -129,7 +129,6 @@ coverage:
 clean:
 	rm -f src/*.o vm/*.o tests/*.o
 	rm -f ternary_compiler vm_test $(TEST_BINS)
-	rm -f test_basic
 	rm -f *.gcov *.gcda *.gcno src/*.gcda src/*.gcno vm/*.gcda vm/*.gcno tests/*.gcda tests/*.gcno
 
 .PHONY: all test ci lint coverage clean

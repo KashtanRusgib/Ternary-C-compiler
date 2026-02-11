@@ -27,21 +27,21 @@
 #define SYS_THREAD_CREATE 8 /* t_thread_create(entry_addr, stack_addr) -> tid */
 #define SYS_THREAD_YIELD  9 /* t_thread_yield() -> 0 */
 
-/* ---- Capability rights (ternary-encoded) ----
- * Rights are a 3-trit field:
- *   trit[0] = read   (P=yes, Z=no, N=deny)
- *   trit[1] = write  (P=yes, Z=no, N=deny)
- *   trit[2] = grant  (P=yes, Z=no, N=deny)
+/* ---- Capability rights (bitmask-encoded) ----
+ * Each right is a separate bit for correct bitwise AND/OR:
+ *   bit 0 = read
+ *   bit 1 = write
+ *   bit 2 = grant
  */
-#define CAP_RIGHT_READ   1   /* trit 0 = P */
-#define CAP_RIGHT_WRITE  3   /* trit 1 = P (value 3 in balanced ternary pos) */
-#define CAP_RIGHT_GRANT  9   /* trit 2 = P */
-#define CAP_RIGHT_ALL   13   /* P P P = 1 + 3 + 9 */
+#define CAP_RIGHT_READ   1   /* bit 0 */
+#define CAP_RIGHT_WRITE  2   /* bit 1 */
+#define CAP_RIGHT_GRANT  4   /* bit 2 */
+#define CAP_RIGHT_ALL    7   /* read | write | grant */
 
 /* ---- Capability structure ---- */
 typedef struct {
     int object_id;    /* Target kernel object */
-    int rights;       /* Ternary-encoded rights mask */
+    int rights;       /* Bitmask-encoded rights (see CAP_RIGHT_*) */
     int badge;        /* IPC badge for endpoint discrimination */
 } seT5_cap;
 

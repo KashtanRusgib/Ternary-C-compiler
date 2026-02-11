@@ -132,12 +132,12 @@ TEST(test_cap_revoke) {
     ASSERT_EQ(cap.badge, 0);
 }
 
-TEST(test_cap_rights_ternary_encoding) {
-    /* Verify ternary encoding: R=1, W=3, G=9, all=13 */
+TEST(test_cap_rights_bitmask_encoding) {
+    /* Verify bitmask encoding: R=1, W=2, G=4, all=7 */
     ASSERT_EQ(CAP_RIGHT_READ, 1);
-    ASSERT_EQ(CAP_RIGHT_WRITE, 3);
-    ASSERT_EQ(CAP_RIGHT_GRANT, 9);
-    ASSERT_EQ(CAP_RIGHT_ALL, 13);
+    ASSERT_EQ(CAP_RIGHT_WRITE, 2);
+    ASSERT_EQ(CAP_RIGHT_GRANT, 4);
+    ASSERT_EQ(CAP_RIGHT_ALL, 7);
 }
 
 TEST(test_cap_obj_types) {
@@ -180,7 +180,7 @@ int main(void) {
     RUN_TEST(test_cap_grant_restricts_rights);
     RUN_TEST(test_cap_grant_no_escalation);
     RUN_TEST(test_cap_revoke);
-    RUN_TEST(test_cap_rights_ternary_encoding);
+    RUN_TEST(test_cap_rights_bitmask_encoding);
     RUN_TEST(test_cap_obj_types);
     /* Combined */
     RUN_TEST(test_store_then_write_syscall);

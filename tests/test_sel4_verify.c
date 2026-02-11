@@ -162,8 +162,8 @@ TEST(test_sel4_compile_simple_expr) {
 
 TEST(test_sel4_compile_cap_arithmetic) {
     unsigned char code[256];
-    /* Simulate cap arithmetic: object_id(1) + rights(13) = 14 */
-    int len = sel4_compile_full("1 + 13", code, 256);
+    /* Simulate cap arithmetic: object_id(1) + rights(7) = 8 */
+    int len = sel4_compile_full("1 + 7", code, 256);
     ASSERT_TRUE(len > 0);
     vm_memory_reset();
     vm_run(code, (size_t)len);

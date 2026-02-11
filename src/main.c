@@ -16,8 +16,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // TODO: Read file instead of hardcode
-    const char *source = "1 + 2 * 3";
+    const char *source = argv[1];
 
     printf("Compiling: %s\n", source);
 

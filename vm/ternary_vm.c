@@ -10,6 +10,9 @@ static int sp = 0;  // Stack pointer
 /* Phase 2: ternary-addressable memory (729 cells = 3^6) */
 static int memory[MEMORY_SIZE];
 
+/* Bump allocator top for SYS_MMAP */
+static int heap_top = MEMORY_SIZE / 2;
+
 static void push(int val) {
     if (sp < STACK_SIZE) stack[sp++] = val;
 }
@@ -31,6 +34,7 @@ void vm_memory_write(int addr, int value) {
 void vm_memory_reset(void) {
     for (int i = 0; i < MEMORY_SIZE; i++) memory[i] = 0;
     sp = 0;
+    heap_top = MEMORY_SIZE / 2;
 }
 
 void vm_run(unsigned char *bytecode, size_t len) {
@@ -109,7 +113,6 @@ void vm_run(unsigned char *bytecode, size_t len) {
                     case 3: { /* t_mmap: pop size -> return base addr */
                         int sz = pop();
                         /* Simple bump allocator from top of memory */
-                        static int heap_top = MEMORY_SIZE / 2;
                         int base = heap_top;
                         heap_top += sz;
                         if (heap_top > MEMORY_SIZE) heap_top = MEMORY_SIZE;
