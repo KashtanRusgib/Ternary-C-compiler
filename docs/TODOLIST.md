@@ -7,9 +7,9 @@
 - **VERIFICATION**: **MUST** pass unit tests before DONE. If fail, [REVERTED: Reason].
 
 ### Tasks (Prioritized)
-1. [OPEN] TASK-001: Expand lexer to handle loops (for/while). Add unit tests.
+1. [DONE] TASK-001: Expand lexer to handle loops (for/while). Add unit tests. — Expanded TokenType with 12 new types. Tokenizer handles keywords, identifiers, symbols. 4 new tests added.
 2. [OPEN] TASK-002: Implement trit array for multi-trit words in ternary.h.
-3. [OPEN] TASK-003: Add control flow to VM (JMP, COND_JMP).
+3. [DONE] TASK-003: Add control flow to VM (JMP, COND_JMP). — OP_JMP and OP_COND_JMP added. 3 new tests (jmp, cond_jmp_true, cond_jmp_false).
 4. [OPEN] TASK-004: Write parser for functions. Test with simple main().
 5. [OPEN] TASK-005: Optimize constant folding in IR.
 6. [OPEN] TASK-006: Integrate logging in all src files.

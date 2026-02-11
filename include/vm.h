@@ -7,7 +7,7 @@
 #define STACK_SIZE 256
 
 enum Opcode {
-    OP_PUSH, OP_ADD, OP_MUL, OP_HALT
+    OP_PUSH, OP_ADD, OP_MUL, OP_JMP, OP_COND_JMP, OP_HALT
 };
 
 // Run bytecode on the ternary VM.

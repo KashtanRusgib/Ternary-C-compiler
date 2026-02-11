@@ -145,6 +145,49 @@ TEST(test_whitespace_only) {
     ASSERT_EQ(tokens[0].type, TOK_EOF);
 }
 
+/* ---- Keyword tokenization (TASK-001) ---- */
+
+TEST(test_for_keyword) {
+    tokenize("for");
+    ASSERT_EQ(tokens[0].type, TOK_FOR);
+    ASSERT_EQ(tokens[1].type, TOK_EOF);
+}
+
+TEST(test_while_keyword) {
+    tokenize("while");
+    ASSERT_EQ(tokens[0].type, TOK_WHILE);
+    ASSERT_EQ(tokens[1].type, TOK_EOF);
+}
+
+TEST(test_for_loop_structure) {
+    tokenize("for (int i=0; i<10; i++) { }");
+    ASSERT_EQ(tokens[0].type, TOK_FOR);
+    ASSERT_EQ(tokens[1].type, TOK_LPAREN);
+    ASSERT_EQ(tokens[2].type, TOK_INT_KW);
+    ASSERT_EQ(tokens[3].type, TOK_IDENT);
+    ASSERT_EQ(tokens[4].type, TOK_EQ);
+    ASSERT_EQ(tokens[5].type, TOK_INT);
+    ASSERT_EQ(tokens[5].value, 0);
+    ASSERT_EQ(tokens[6].type, TOK_SEMI);
+    ASSERT_EQ(tokens[7].type, TOK_IDENT);
+    ASSERT_EQ(tokens[8].type, TOK_LT);
+    ASSERT_EQ(tokens[9].type, TOK_INT);
+    ASSERT_EQ(tokens[9].value, 10);
+    ASSERT_EQ(tokens[10].type, TOK_SEMI);
+    ASSERT_EQ(tokens[11].type, TOK_IDENT);
+    ASSERT_EQ(tokens[12].type, TOK_PLUS_PLUS);
+    ASSERT_EQ(tokens[13].type, TOK_RPAREN);
+    ASSERT_EQ(tokens[14].type, TOK_LBRACE);
+    ASSERT_EQ(tokens[15].type, TOK_RBRACE);
+    ASSERT_EQ(tokens[16].type, TOK_EOF);
+}
+
+TEST(test_invalid_loop_keyword) {
+    tokenize("forr");
+    ASSERT_EQ(tokens[0].type, TOK_IDENT);
+    ASSERT_EQ(tokens[1].type, TOK_EOF);
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("Lexer/Tokenizer");
 
@@ -161,6 +204,10 @@ int main(void) {
     RUN_TEST(test_chained_multiplication);
     RUN_TEST(test_empty_string);
     RUN_TEST(test_whitespace_only);
+    RUN_TEST(test_for_keyword);
+    RUN_TEST(test_while_keyword);
+    RUN_TEST(test_for_loop_structure);
+    RUN_TEST(test_invalid_loop_keyword);
 
     TEST_SUITE_END();
 }

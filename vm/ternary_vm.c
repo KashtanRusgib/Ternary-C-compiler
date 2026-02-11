@@ -30,6 +30,18 @@ void vm_run(unsigned char *bytecode, size_t len) {
                 push(a * b);
                 break;
             }
+            case OP_JMP:
+                pc = (size_t)bytecode[pc];
+                break;
+            case OP_COND_JMP: {
+                int cond = pop();
+                if (cond == 0) {
+                    pc = (size_t)bytecode[pc];
+                } else {
+                    pc++;  /* skip address byte */
+                }
+                break;
+            }
             case OP_HALT: printf("Result: %d\n", pop()); return;
         }
     }

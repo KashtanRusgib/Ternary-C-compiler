@@ -136,6 +136,48 @@ TEST(test_vm_chained_mul) {
     ASSERT_STR_EQ(output_buf, "Result: 24\n");
 }
 
+/* ---- JMP: unconditional jump (TASK-003) ---- */
+
+TEST(test_vm_jmp) {
+    /* PUSH 99, JMP to byte 6 (skip PUSH 42), HALT */
+    unsigned char code[] = {
+        OP_PUSH, 99,
+        OP_JMP, 6,
+        OP_PUSH, 42,
+        OP_HALT
+    };
+    run_and_capture(code, sizeof(code));
+    ASSERT_STR_EQ(output_buf, "Result: 99\n");
+}
+
+/* ---- COND_JMP: jump if top of stack == 0 (TASK-003) ---- */
+
+TEST(test_vm_cond_jmp_true) {
+    /* PUSH 10, PUSH 0 (condition=0 -> jump), COND_JMP 8, PUSH 20 (skipped), HALT */
+    unsigned char code[] = {
+        OP_PUSH, 10,
+        OP_PUSH, 0,
+        OP_COND_JMP, 8,
+        OP_PUSH, 20,
+        OP_HALT
+    };
+    run_and_capture(code, sizeof(code));
+    ASSERT_STR_EQ(output_buf, "Result: 10\n");
+}
+
+TEST(test_vm_cond_jmp_false) {
+    /* PUSH 10, PUSH 1 (condition!=0 -> no jump), COND_JMP 8, PUSH 20, HALT */
+    unsigned char code[] = {
+        OP_PUSH, 10,
+        OP_PUSH, 1,
+        OP_COND_JMP, 8,
+        OP_PUSH, 20,
+        OP_HALT
+    };
+    run_and_capture(code, sizeof(code));
+    ASSERT_STR_EQ(output_buf, "Result: 20\n");
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("VM Execution");
 
@@ -149,6 +191,9 @@ int main(void) {
     RUN_TEST(test_vm_expression_1_plus_2_mul_3);
     RUN_TEST(test_vm_chained_add);
     RUN_TEST(test_vm_chained_mul);
+    RUN_TEST(test_vm_jmp);
+    RUN_TEST(test_vm_cond_jmp_true);
+    RUN_TEST(test_vm_cond_jmp_false);
 
     TEST_SUITE_END();
 }
