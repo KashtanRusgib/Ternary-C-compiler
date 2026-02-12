@@ -60,9 +60,15 @@ static void emit_expr(Expr *e) {
         case NODE_BINOP:
             emit_expr(e->left);
             emit_expr(e->right);
-            if (e->op == OP_IR_ADD) b_emit(OP_ADD);
-            else if (e->op == OP_IR_MUL) b_emit(OP_MUL);
-            else if (e->op == OP_IR_SUB) b_emit(OP_SUB);
+            switch (e->op) {
+                case OP_IR_ADD:    b_emit(OP_ADD); break;
+                case OP_IR_MUL:   b_emit(OP_MUL); break;
+                case OP_IR_SUB:   b_emit(OP_SUB); break;
+                case OP_IR_CMP_EQ: b_emit(OP_CMP_EQ); break;
+                case OP_IR_CMP_LT: b_emit(OP_CMP_LT); break;
+                case OP_IR_CMP_GT: b_emit(OP_CMP_GT); break;
+                case OP_IR_NEG:   b_emit(OP_NEG); break;
+            }
             break;
 
         case NODE_RETURN:
@@ -117,11 +123,13 @@ static void emit_expr(Expr *e) {
             break;
 
         case NODE_FUNC_DEF:
-            /* Emit function body statements then body */
+            /* Emit ENTER for scope, body statements, then LEAVE */
+            b_emit(OP_ENTER);
             for (int i = 0; i < e->param_count; i++) {
                 emit_expr(e->params[i]);
             }
             emit_expr(e->body);
+            b_emit(OP_LEAVE);
             break;
 
         case NODE_PROGRAM:
@@ -129,6 +137,193 @@ static void emit_expr(Expr *e) {
                 emit_expr(e->params[i]);
             }
             break;
+
+        /* === Phase 3: Structured control flow (Setun-70/DSSP style) === */
+
+        case NODE_IF: {
+            /*
+             * if (cond) { body } [else { else_body }]
+             *
+             * Emit: cond, [normalize], BRZ else_label, body,
+             *       [JMP end_label, else_label: else_body], end_label:
+             *
+             * Normalization: CMP_LT/CMP_GT return ternary {-1,0,1}
+             * but BRZ only branches on 0. We normalize comparison
+             * results: emit PUSH 1, CMP_EQ after comparisons so that
+             * "true" (1) becomes 1 and "false" (-1 or 0) becomes 0.
+             */
+            emit_expr(e->condition);
+
+            /* Normalize comparison results to boolean 0/1 for BRZ */
+            if (e->condition && e->condition->type == NODE_BINOP &&
+                (e->condition->op == OP_IR_CMP_LT ||
+                 e->condition->op == OP_IR_CMP_GT)) {
+                b_emit(OP_PUSH);
+                b_emit(1);
+                b_emit(OP_CMP_EQ);
+            }
+
+            b_emit(OP_BRZ);
+            int patch_else = bc_pos;
+            b_emit(0);  /* placeholder for else/end target */
+
+            emit_expr(e->body);
+
+            if (e->else_body) {
+                b_emit(OP_JMP);
+                int patch_end = bc_pos;
+                b_emit(0);  /* placeholder for end target */
+
+                /* Patch BRZ to jump here (else start) */
+                bc_out[patch_else] = (unsigned char)bc_pos;
+
+                emit_expr(e->else_body);
+
+                /* Patch JMP to jump here (end) */
+                bc_out[patch_end] = (unsigned char)bc_pos;
+            } else {
+                /* No else: BRZ jumps past body */
+                bc_out[patch_else] = (unsigned char)bc_pos;
+            }
+            break;
+        }
+
+        case NODE_WHILE: {
+            /*
+             * while (cond) { body }
+             *
+             * Emit: LOOP_BEGIN, cond, BRZ end, body, PUSH 1, LOOP_END, end:
+             */
+            int loop_start = bc_pos;
+            b_emit(OP_LOOP_BEGIN);
+
+            emit_expr(e->condition);
+
+            /* Normalize comparison results for BRZ */
+            if (e->condition && e->condition->type == NODE_BINOP &&
+                (e->condition->op == OP_IR_CMP_LT ||
+                 e->condition->op == OP_IR_CMP_GT)) {
+                b_emit(OP_PUSH);
+                b_emit(1);
+                b_emit(OP_CMP_EQ);
+            }
+
+            b_emit(OP_BRZ);
+            int patch_end = bc_pos;
+            b_emit(0);  /* placeholder for end target */
+
+            emit_expr(e->body);
+
+            /* Continue loop */
+            b_emit(OP_PUSH);
+            b_emit(1);
+            b_emit(OP_LOOP_END);
+
+            /* Patch BRZ to jump past LOOP_END */
+            bc_out[patch_end] = (unsigned char)bc_pos;
+            (void)loop_start;
+            break;
+        }
+
+        case NODE_FOR: {
+            /*
+             * for (init; cond; inc) { body }
+             *
+             * Emit: init, LOOP_BEGIN, cond, BRZ end, body, inc, PUSH 1, LOOP_END, end:
+             */
+            emit_expr(e->left);  /* init */
+
+            b_emit(OP_LOOP_BEGIN);
+
+            emit_expr(e->condition);
+
+            /* Normalize comparison results for BRZ */
+            if (e->condition && e->condition->type == NODE_BINOP &&
+                (e->condition->op == OP_IR_CMP_LT ||
+                 e->condition->op == OP_IR_CMP_GT)) {
+                b_emit(OP_PUSH);
+                b_emit(1);
+                b_emit(OP_CMP_EQ);
+            }
+
+            b_emit(OP_BRZ);
+            int patch_end = bc_pos;
+            b_emit(0);
+
+            emit_expr(e->body);
+            emit_expr(e->increment);
+
+            /* Continue loop */
+            b_emit(OP_PUSH);
+            b_emit(1);
+            b_emit(OP_LOOP_END);
+
+            /* Patch BRZ to end */
+            bc_out[patch_end] = (unsigned char)bc_pos;
+            break;
+        }
+
+        case NODE_BLOCK:
+            /* Emit all statements in the block */
+            for (int i = 0; i < e->param_count; i++) {
+                emit_expr(e->params[i]);
+            }
+            break;
+
+        /* === Phase 3: Array support === */
+
+        case NODE_ARRAY_DECL: {
+            /* int arr[N]; allocate N contiguous memory slots */
+            int base = symtab_add(&symtab, e->name, 0);
+            if (base >= 0) {
+                /* Reserve array_size - 1 additional slots */
+                for (int i = 1; i < e->array_size; i++) {
+                    char slotname[72];
+                    snprintf(slotname, sizeof(slotname), "%s[%d]", e->name, i);
+                    symtab_add(&symtab, slotname, 0);
+                }
+                /* Emit initializers if present */
+                for (int i = 0; i < e->param_count && i < e->array_size; i++) {
+                    b_emit(OP_PUSH);
+                    b_emit((unsigned char)(base + i));
+                    emit_expr(e->params[i]);
+                    b_emit(OP_STORE);
+                }
+            }
+            break;
+        }
+
+        case NODE_ARRAY_ACCESS: {
+            /* arr[index] -> load from base + index */
+            int base = symtab_lookup(&symtab, e->name);
+            if (base >= 0) {
+                /* Push base, push index, add, load */
+                b_emit(OP_PUSH);
+                b_emit((unsigned char)base);
+                emit_expr(e->left);  /* index */
+                b_emit(OP_ADD);
+                b_emit(OP_LOAD);
+            } else {
+                b_emit(OP_PUSH);
+                b_emit(0);
+            }
+            break;
+        }
+
+        case NODE_ARRAY_ASSIGN: {
+            /* arr[index] = expr -> store at base + index */
+            int base = symtab_lookup(&symtab, e->name);
+            if (base >= 0) {
+                /* Push base, push index, add => address on stack */
+                b_emit(OP_PUSH);
+                b_emit((unsigned char)base);
+                emit_expr(e->left);  /* index */
+                b_emit(OP_ADD);
+                emit_expr(e->right); /* value */
+                b_emit(OP_STORE);
+            }
+            break;
+        }
     }
 }
 

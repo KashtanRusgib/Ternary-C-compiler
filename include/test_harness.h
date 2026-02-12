@@ -139,4 +139,48 @@ static const char *_th_suite_name = "Unknown";
     } \
 } while(0)
 
+#define ASSERT_GT(actual, threshold) do { \
+    long long _a = (long long)(actual); \
+    long long _t = (long long)(threshold); \
+    if (!(_a > _t)) { \
+        fprintf(stderr, "\n    ASSERT_GT failed: %s == %lld, expected > %lld\n      at %s:%d\n", \
+                #actual, _a, _t, __FILE__, __LINE__); \
+        _th_current_failed = 1; \
+        return; \
+    } \
+} while(0)
+
+#define ASSERT_LT(actual, threshold) do { \
+    long long _a = (long long)(actual); \
+    long long _t = (long long)(threshold); \
+    if (!(_a < _t)) { \
+        fprintf(stderr, "\n    ASSERT_LT failed: %s == %lld, expected < %lld\n      at %s:%d\n", \
+                #actual, _a, _t, __FILE__, __LINE__); \
+        _th_current_failed = 1; \
+        return; \
+    } \
+} while(0)
+
+#define ASSERT_GE(actual, threshold) do { \
+    long long _a = (long long)(actual); \
+    long long _t = (long long)(threshold); \
+    if (!(_a >= _t)) { \
+        fprintf(stderr, "\n    ASSERT_GE failed: %s == %lld, expected >= %lld\n      at %s:%d\n", \
+                #actual, _a, _t, __FILE__, __LINE__); \
+        _th_current_failed = 1; \
+        return; \
+    } \
+} while(0)
+
+#define ASSERT_LE(actual, threshold) do { \
+    long long _a = (long long)(actual); \
+    long long _t = (long long)(threshold); \
+    if (!(_a <= _t)) { \
+        fprintf(stderr, "\n    ASSERT_LE failed: %s == %lld, expected <= %lld\n      at %s:%d\n", \
+                #actual, _a, _t, __FILE__, __LINE__); \
+        _th_current_failed = 1; \
+        return; \
+    } \
+} while(0)
+
 #endif /* TEST_HARNESS_H */

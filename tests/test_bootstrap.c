@@ -139,6 +139,72 @@ TEST(test_bootstrap_error_handling) {
     ASSERT_TRUE(len == -1 || len > 0);
 }
 
+/* ====== Phase 3: Control flow compilation tests ====== */
+
+TEST(test_bootstrap_if_simple) {
+    /* if (1 == 1) { return 42; } return 0; */
+    unsigned char code[512];
+    int len = bootstrap_compile(
+        "int main() { if (1 == 1) { return 42; } return 0; }",
+        code, 512);
+    ASSERT_TRUE(len > 0);
+    /* Should compile without errors */
+}
+
+TEST(test_bootstrap_if_else) {
+    unsigned char code[512];
+    int len = bootstrap_compile(
+        "int main() { if (1 < 2) { return 10; } else { return 20; } }",
+        code, 512);
+    ASSERT_TRUE(len > 0);
+}
+
+TEST(test_bootstrap_while_loop) {
+    unsigned char code[512];
+    int len = bootstrap_compile(
+        "int main() { int x = 5; while (x > 0) { x = x - 1; } return x; }",
+        code, 512);
+    ASSERT_TRUE(len > 0);
+}
+
+TEST(test_bootstrap_for_loop) {
+    unsigned char code[512];
+    int len = bootstrap_compile(
+        "int main() { int sum = 0; for (int i = 0; i < 5; i++) { sum = sum + i; } return sum; }",
+        code, 512);
+    ASSERT_TRUE(len > 0);
+}
+
+TEST(test_bootstrap_comparison_eq) {
+    unsigned char code[256];
+    int len = bootstrap_compile(
+        "int main() { return 5 == 5; }",
+        code, 256);
+    ASSERT_TRUE(len > 0);
+    /* After constant folding, 5==5 -> 1, so PUSH 1, HALT */
+}
+
+TEST(test_bootstrap_comparison_ops) {
+    unsigned char code[256];
+    int len;
+
+    len = bootstrap_compile("int main() { return 3 < 5; }", code, 256);
+    ASSERT_TRUE(len > 0);
+
+    len = bootstrap_compile("int main() { return 10 > 3; }", code, 256);
+    ASSERT_TRUE(len > 0);
+}
+
+TEST(test_bootstrap_nested_if) {
+    unsigned char code[512];
+    int len = bootstrap_compile(
+        "int main() { int x = 10; "
+        "if (x > 5) { if (x > 8) { return 1; } return 2; } "
+        "return 3; }",
+        code, 512);
+    ASSERT_TRUE(len > 0);
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("Bootstrap Self-Host (TASK-018)");
     /* Symbol table */
@@ -156,6 +222,14 @@ int main(void) {
     RUN_TEST(test_bootstrap_pointer_syntax);
     RUN_TEST(test_bootstrap_roundtrip);
     RUN_TEST(test_bootstrap_error_handling);
+    /* Phase 3: Control flow */
+    RUN_TEST(test_bootstrap_if_simple);
+    RUN_TEST(test_bootstrap_if_else);
+    RUN_TEST(test_bootstrap_while_loop);
+    RUN_TEST(test_bootstrap_for_loop);
+    RUN_TEST(test_bootstrap_comparison_eq);
+    RUN_TEST(test_bootstrap_comparison_ops);
+    RUN_TEST(test_bootstrap_nested_if);
     /* Self-test */
     RUN_TEST(test_bootstrap_self_test);
     TEST_SUITE_END();

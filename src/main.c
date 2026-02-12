@@ -7,6 +7,7 @@
 #include "../include/ir.h"
 #include "../include/logger.h"
 #include "../include/bootstrap.h"
+#include "../include/selfhost.h"
 #include "../include/verilog_emit.h"
 
 int main(int argc, char **argv) {
@@ -14,7 +15,7 @@ int main(int argc, char **argv) {
     LOG_INFO_MSG("Main", "TASK-006", "Compiler started");
 
     if (argc < 2) {
-        printf("Usage: %s [--self-host | --emit-verilog <source> <out.v> | <c_source>]\n", argv[0]);
+        printf("Usage: %s [--self-host | --self-host-full | --emit-verilog <source> <out.v> | <c_source>]\n", argv[0]);
         return 1;
     }
 
@@ -23,6 +24,15 @@ int main(int argc, char **argv) {
         LOG_INFO_MSG("Main", "TASK-018", "Self-host mode entered");
         int result = bootstrap_self_test();
         LOG_INFO_MSG("Main", "TASK-018", result == 0 ? "Self-host PASS" : "Self-host FAIL");
+        logger_close();
+        return result;
+    }
+
+    /* Full self-hosting verification (Phase 5) */
+    if (strcmp(argv[1], "--self-host-full") == 0) {
+        LOG_INFO_MSG("Main", "Phase5", "Full self-hosting verification");
+        int result = selfhost_full_test();
+        LOG_INFO_MSG("Main", "Phase5", result == 0 ? "Self-host-full PASS" : "Self-host-full FAIL");
         logger_close();
         return result;
     }

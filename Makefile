@@ -2,14 +2,14 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude
 
 # ---- Source objects ----
-SRC_OBJS   = src/main.o src/parser.o src/codegen.o src/logger.o src/ir.o src/bootstrap.o src/sel4_verify.o
+SRC_OBJS   = src/main.o src/parser.o src/codegen.o src/logger.o src/ir.o src/bootstrap.o src/sel4_verify.o src/postfix_ir.o src/typechecker.o src/linker.o src/selfhost.o
 VM_OBJS    = vm/ternary_vm.o
 
 # ---- Shared objects (used by tests) ----
-LIB_OBJS   = src/parser.o src/codegen.o src/logger.o src/ir.o $(VM_OBJS)
+LIB_OBJS   = src/parser.o src/codegen.o src/logger.o src/ir.o src/postfix_ir.o src/typechecker.o src/linker.o src/selfhost.o src/bootstrap.o $(VM_OBJS)
 
 # ---- Test binaries ----
-TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_sel4 test_integration test_memory test_set5 test_bootstrap test_sel4_verify test_hardware test_basic
+TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_sel4 test_integration test_memory test_set5 test_bootstrap test_sel4_verify test_hardware test_basic test_typechecker test_linker test_arrays test_selfhost
 
 # ---- Default target ----
 all: ternary_compiler vm_test $(TEST_BINS)
@@ -56,7 +56,7 @@ test_memory: tests/test_memory.o $(LIB_OBJS)
 test_set5: tests/test_set5.o $(VM_OBJS) src/logger.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-test_bootstrap: tests/test_bootstrap.o src/bootstrap.o $(LIB_OBJS)
+test_bootstrap: tests/test_bootstrap.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 test_sel4_verify: tests/test_sel4_verify.o src/sel4_verify.o $(LIB_OBJS)
@@ -68,12 +68,24 @@ test_hardware: tests/test_hardware.o
 test_basic: tests/test_basic.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
+test_typechecker: tests/test_typechecker.o src/typechecker.o src/ir.o src/parser.o src/logger.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_linker: tests/test_linker.o src/linker.o src/logger.o $(VM_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_arrays: tests/test_arrays.o $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_selfhost: tests/test_selfhost.o $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
 # ---- Generic rule for .c -> .o ----
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ---- Dependencies ----
-src/main.o:           src/main.c include/parser.h include/codegen.h include/vm.h include/ir.h include/logger.h include/bootstrap.h include/verilog_emit.h
+src/main.o:           src/main.c include/parser.h include/codegen.h include/vm.h include/ir.h include/logger.h include/bootstrap.h include/selfhost.h include/verilog_emit.h
 src/parser.o:         src/parser.c include/parser.h include/ir.h include/logger.h
 src/codegen.o:        src/codegen.c include/codegen.h include/parser.h include/vm.h include/logger.h
 src/logger.o:         src/logger.c include/logger.h
@@ -93,10 +105,18 @@ tests/test_memory.o:      tests/test_memory.c include/test_harness.h include/ter
 tests/test_set5.o:        tests/test_set5.c include/test_harness.h include/vm.h include/set5.h
 tests/test_bootstrap.o:   tests/test_bootstrap.c include/test_harness.h include/bootstrap.h include/vm.h include/ir.h
 tests/test_sel4_verify.o: tests/test_sel4_verify.c include/test_harness.h include/sel4_verify.h include/vm.h
-tests/test_hardware.o:    tests/test_hardware.c include/test_harness.h include/ternary.h
+tests/test_hardware.o:    tests/test_hardware.c include/test_harness.h include/ternary.h include/verilog_emit.h
 tests/test_basic.o:       tests/test_basic.c include/ternary.h include/parser.h include/codegen.h include/vm.h
 src/bootstrap.o:          src/bootstrap.c include/bootstrap.h include/ir.h include/parser.h include/codegen.h include/vm.h include/logger.h
 src/sel4_verify.o:        src/sel4_verify.c include/sel4_verify.h include/parser.h include/codegen.h include/vm.h include/logger.h
+src/postfix_ir.o:         src/postfix_ir.c include/postfix_ir.h include/ir.h
+src/typechecker.o:        src/typechecker.c include/typechecker.h include/ir.h include/logger.h
+src/linker.o:             src/linker.c include/linker.h include/logger.h
+tests/test_typechecker.o: tests/test_typechecker.c include/test_harness.h include/typechecker.h include/ir.h
+tests/test_linker.o:      tests/test_linker.c include/test_harness.h include/linker.h include/vm.h
+tests/test_arrays.o:      tests/test_arrays.c include/test_harness.h include/bootstrap.h include/vm.h include/ir.h include/parser.h
+src/selfhost.o:           src/selfhost.c include/selfhost.h include/bootstrap.h include/vm.h include/logger.h
+tests/test_selfhost.o:    tests/test_selfhost.c include/test_harness.h include/selfhost.h include/bootstrap.h include/vm.h
 
 # ---- Test targets ----
 test: $(TEST_BINS)
@@ -136,7 +156,7 @@ coverage:
 # ---- Clean ----
 clean:
 	rm -f src/*.o vm/*.o tests/*.o
-	rm -f ternary_compiler vm_test $(TEST_BINS)
+	rm -f ternary_compiler vm_test $(TEST_BINS) test_selfhost
 	rm -f *.gcov *.gcda *.gcno src/*.gcda src/*.gcno vm/*.gcda vm/*.gcno tests/*.gcda tests/*.gcno
 
 .PHONY: all test ci lint coverage clean

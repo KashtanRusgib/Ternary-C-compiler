@@ -155,6 +155,146 @@ TEST(test_parse_return_precedence) {
     expr_free(prog);
 }
 
+/* ====== Phase 3: Structured control flow parsing ====== */
+
+/* ---- Parse if statement ---- */
+
+TEST(test_parse_if_simple) {
+    Expr *prog = parse_program(
+        "int main() { if (1 == 1) { return 42; } return 0; }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *fn = prog->params[0];
+    ASSERT_EQ(fn->type, NODE_FUNC_DEF);
+
+    /* The function body should be NODE_RETURN (the 'return 0;')
+     * preceding stmts should contain the if */
+    /* fn->params has the params + preceding stmts; body is the last stmt */
+    /* With our parser, 'if' is a preceding stmt, 'return 0' is the body */
+    ASSERT_TRUE(fn->param_count >= 1);
+
+    /* Find the if node in the params (preceding stmts) */
+    int found_if = 0;
+    for (int i = 0; i < fn->param_count; i++) {
+        if (fn->params[i]->type == NODE_IF) found_if = 1;
+    }
+    ASSERT_TRUE(found_if);
+
+    expr_free(prog);
+}
+
+/* ---- Parse if-else ---- */
+
+TEST(test_parse_if_else) {
+    Expr *prog = parse_program(
+        "int main() { if (1 < 2) { return 10; } else { return 20; } }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *fn = prog->params[0];
+    /* The if-else is either the body or a preceding stmt */
+    Expr *if_node = NULL;
+    if (fn->body && fn->body->type == NODE_IF) {
+        if_node = fn->body;
+    } else {
+        for (int i = 0; i < fn->param_count; i++) {
+            if (fn->params[i]->type == NODE_IF) {
+                if_node = fn->params[i];
+                break;
+            }
+        }
+    }
+    ASSERT_NOT_NULL(if_node);
+    ASSERT_NOT_NULL(if_node->condition);
+    ASSERT_NOT_NULL(if_node->body);
+    ASSERT_NOT_NULL(if_node->else_body);
+
+    /* Condition should be 1 < 2 */
+    ASSERT_EQ(if_node->condition->type, NODE_BINOP);
+    ASSERT_EQ(if_node->condition->op, OP_IR_CMP_LT);
+
+    expr_free(prog);
+}
+
+/* ---- Parse while loop ---- */
+
+TEST(test_parse_while) {
+    Expr *prog = parse_program(
+        "int main() { int x = 10; while (x > 0) { x = x - 1; } return x; }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *fn = prog->params[0];
+    /* Find the while node */
+    int found_while = 0;
+    for (int i = 0; i < fn->param_count; i++) {
+        if (fn->params[i]->type == NODE_WHILE) {
+            found_while = 1;
+            ASSERT_NOT_NULL(fn->params[i]->condition);
+            ASSERT_NOT_NULL(fn->params[i]->body);
+        }
+    }
+    ASSERT_TRUE(found_while);
+
+    expr_free(prog);
+}
+
+/* ---- Parse for loop ---- */
+
+TEST(test_parse_for) {
+    Expr *prog = parse_program(
+        "int main() { int sum = 0; for (int i = 0; i < 5; i++) { sum = sum + i; } return sum; }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *fn = prog->params[0];
+    int found_for = 0;
+    for (int i = 0; i < fn->param_count; i++) {
+        if (fn->params[i]->type == NODE_FOR) {
+            found_for = 1;
+            ASSERT_NOT_NULL(fn->params[i]->condition);
+            ASSERT_NOT_NULL(fn->params[i]->body);
+            ASSERT_NOT_NULL(fn->params[i]->increment);
+        }
+    }
+    ASSERT_TRUE(found_for);
+
+    expr_free(prog);
+}
+
+/* ---- Parse comparison operators ---- */
+
+TEST(test_parse_comparison_eq) {
+    Expr *prog = parse_program("int main() { return 5 == 5; }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *ret = prog->params[0]->body;
+    ASSERT_EQ(ret->type, NODE_RETURN);
+    ASSERT_EQ(ret->left->type, NODE_BINOP);
+    ASSERT_EQ(ret->left->op, OP_IR_CMP_EQ);
+
+    expr_free(prog);
+}
+
+TEST(test_parse_comparison_lt) {
+    Expr *prog = parse_program("int main() { return 3 < 5; }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *ret = prog->params[0]->body;
+    ASSERT_EQ(ret->left->type, NODE_BINOP);
+    ASSERT_EQ(ret->left->op, OP_IR_CMP_LT);
+
+    expr_free(prog);
+}
+
+TEST(test_parse_comparison_gt) {
+    Expr *prog = parse_program("int main() { return 10 > 3; }");
+    ASSERT_NOT_NULL(prog);
+
+    Expr *ret = prog->params[0]->body;
+    ASSERT_EQ(ret->left->type, NODE_BINOP);
+    ASSERT_EQ(ret->left->op, OP_IR_CMP_GT);
+
+    expr_free(prog);
+}
+
 int main(void) {
     TEST_SUITE_BEGIN("Parser (Functions)");
 
@@ -165,6 +305,15 @@ int main(void) {
     RUN_TEST(test_parse_multi_func);
     RUN_TEST(test_parse_invalid_func);
     RUN_TEST(test_parse_return_precedence);
+
+    /* Phase 3: Control flow parsing */
+    RUN_TEST(test_parse_if_simple);
+    RUN_TEST(test_parse_if_else);
+    RUN_TEST(test_parse_while);
+    RUN_TEST(test_parse_for);
+    RUN_TEST(test_parse_comparison_eq);
+    RUN_TEST(test_parse_comparison_lt);
+    RUN_TEST(test_parse_comparison_gt);
 
     TEST_SUITE_END();
 }

@@ -88,18 +88,18 @@ docs/
 
 1. **Phase 1 (MVP):** Compile simple expressions to ternary bytecode *(DONE)*
 2. **Phase 2 (seT5):** Pointers/memory, syscalls, Verilog sim, self-host, seL4 verify *(DONE)*
-3. **Phase 3:** Full C subset (if/else, while, arrays), type checking, linker
-4. **Phase 4:** Ternary hardware synthesis, FPGA target
-5. **Phase 5:** Full self-hosting, formal verification with Isabelle AFP complete
+3. **Phase 3:** Full C subset (if/else, while, arrays), type checking, linker *(DONE)*
+4. **Phase 4:** Ternary hardware synthesis, FPGA target *(DONE)*
+5. **Phase 5:** Full self-hosting, formal verification with Isabelle AFP complete *(DONE)*
 
 **AGENT DIRECTIVE**: If you're an agent, read docs/AGENT_PROMPT.md first. Update this README only if architecture changes, and verify with tests.
 
 ## Build Stats
-- **Test suites**: 13 (trit, lexer, parser, codegen, vm, logger, ir, sel4, integration, memory, set5, bootstrap, sel4_verify)
-- **Total tests**: 168+
-- **Lines of code**: ~4500+ (src + include + tests + hw)
+- **Test suites**: 19 (trit, lexer, parser, codegen, vm, logger, ir, sel4, integration, memory, set5, bootstrap, sel4_verify, hardware, basic, typechecker, linker, arrays, selfhost)
+- **Total tests**: 286+
+- **Lines of code**: ~12,400+ (src + include + tests + hw + proofs)
 - **Build**: `make all` with `gcc -Wall -Wextra`
 - **CI**: `make ci` (test + lint)
-- **Verilog**: `hw/ternary_alu.v` (simulated with Icarus Verilog)
-- **Isabelle**: `proofs/Ternary.thy` (15+ lemmas)
-- **Supported features**: Balanced ternary arithmetic, 9-trit word ops, pointers and memory model, ternary-addressed memory (729 cells), lexer (keywords/idents/operators), recursive descent parser (functions, var decls, assignments, pointer syntax), constant folding optimizer, stack-based VM (JMP/COND_JMP/LOAD/STORE/SYSCALL), seT5 microkernel syscalls (10 syscall stubs), capability-based security (derivation trees, IPC endpoints), self-hosting bootstrap compiler, seL4 full compilation + verification, Verilog ternary ALU + processor
+- **Verilog**: `hw/ternary_alu.v`, `hw/ternary_processor_full.v`, `hw/fpga_top.v` (FPGA-ready, iCE40/Xilinx targets)
+- **Isabelle**: `proofs/Ternary.thy` (65+ lemmas across 5 phases: trit arithmetic, memory model, type safety, hardware correspondence, VM correctness, compilation correctness, self-hosting properties)
+- **Supported features**: Balanced ternary arithmetic, 9-trit word ops, tryte (6-trit) type, ternary logic gates (consensus/accept-any), pointers and memory model, ternary-addressed memory (729 cells), lexer (keywords/idents/operators), recursive descent parser (functions, var decls, if/else/while/for, arrays, assignments, pointer syntax, comparisons), constant folding optimizer, postfix IR (POLIZ-style), type checker, multi-module linker, Setun-70 inspired two-stack VM (36 opcodes: JMP/BRZ/BRN/BRP/LOAD/STORE/SYSCALL/DUP/DROP/SWAP/OVER/ROT/TO_R/FROM_R/CMP_EQ/CMP_LT/CMP_GT/NEG/LOOP_BEGIN/LOOP_END), seT5 microkernel syscalls (10 syscall stubs), capability-based security (derivation trees, IPC endpoints, TCBs), self-hosting bootstrap compiler, self-hosted tokenizer, seL4 full compilation + verification, Verilog ternary ALU + full 36-opcode processor, FPGA synthesis (iCE40 HX8K / Xilinx Artix-7), Isabelle/HOL formal verification (VM correctness, compilation correctness, type safety, hardware correspondence)

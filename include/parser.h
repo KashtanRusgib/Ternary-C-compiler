@@ -30,8 +30,18 @@ typedef enum {
     /* Keywords */
     TOK_FOR,        /* for */
     TOK_WHILE,      /* while */
+    TOK_IF,         /* if */
+    TOK_ELSE,       /* else */
     TOK_INT_KW,     /* int (keyword, distinct from TOK_INT literal) */
     TOK_RETURN,     /* return */
+
+    /* Brackets */
+    TOK_LBRACKET,   /* [ */
+    TOK_RBRACKET,   /* ] */
+
+    /* Multi-char operators */
+    TOK_EQEQ,      /* == */
+    TOK_GT,         /* > */
 
     /* Identifiers */
     TOK_IDENT,      /* identifier */
@@ -45,7 +55,7 @@ typedef struct {
     int value;
 } Token;
 
-#define MAX_TOKENS 100
+#define MAX_TOKENS 512
 
 extern Token tokens[MAX_TOKENS];
 extern int token_idx;

@@ -33,6 +33,10 @@ void tokenize(const char *source) {
                 tokens[token_idx++] = (Token){TOK_FOR, 0};
             } else if (len == 5 && strncmp(&source[start], "while", 5) == 0) {
                 tokens[token_idx++] = (Token){TOK_WHILE, 0};
+            } else if (len == 2 && strncmp(&source[start], "if", 2) == 0) {
+                tokens[token_idx++] = (Token){TOK_IF, 0};
+            } else if (len == 4 && strncmp(&source[start], "else", 4) == 0) {
+                tokens[token_idx++] = (Token){TOK_ELSE, 0};
             } else if (len == 3 && strncmp(&source[start], "int", 3) == 0) {
                 tokens[token_idx++] = (Token){TOK_INT_KW, 0};
             } else if (len == 6 && strncmp(&source[start], "return", 6) == 0) {
@@ -81,11 +85,20 @@ void tokenize(const char *source) {
                 i++;
                 break;
             case '=':
-                tokens[token_idx++] = (Token){TOK_EQ, 0};
-                i++;
+                if (source[i + 1] == '=') {
+                    tokens[token_idx++] = (Token){TOK_EQEQ, 0};
+                    i += 2;
+                } else {
+                    tokens[token_idx++] = (Token){TOK_EQ, 0};
+                    i++;
+                }
                 break;
             case '<':
                 tokens[token_idx++] = (Token){TOK_LT, 0};
+                i++;
+                break;
+            case '>':
+                tokens[token_idx++] = (Token){TOK_GT, 0};
                 i++;
                 break;
             case '(':
@@ -110,6 +123,14 @@ void tokenize(const char *source) {
                 break;
             case ',':
                 tokens[token_idx++] = (Token){TOK_COMMA, 0};
+                i++;
+                break;
+            case '[':
+                tokens[token_idx++] = (Token){TOK_LBRACKET, 0};
+                i++;
+                break;
+            case ']':
+                tokens[token_idx++] = (Token){TOK_RBRACKET, 0};
                 i++;
                 break;
             default:
@@ -185,6 +206,17 @@ static Expr *parse_primary(void) {
         char *name = strdup(token_names[pidx]);
         pidx++;
 
+        /* Array access: ident '[' expr ']' */
+        if (tokens[pidx].type == TOK_LBRACKET) {
+            pidx++; /* skip [ */
+            Expr *index = parse_expr_r();
+            if (perror_flag) { free(name); return NULL; }
+            if (!expect(TOK_RBRACKET)) { free(name); expr_free(index); return NULL; }
+            Expr *access = create_array_access(name, index);
+            free(name);
+            return access;
+        }
+
         /* Function call: ident '(' args ')' */
         if (tokens[pidx].type == TOK_LPAREN) {
             pidx++; /* skip ( */
@@ -243,7 +275,8 @@ static Expr *parse_term(void) {
     return left;
 }
 
-static Expr *parse_expr_r(void) {
+/* Parse additive expression: term ((+|-) term)* */
+static Expr *parse_additive(void) {
     Expr *left = parse_term();
     if (perror_flag) return NULL;
 
@@ -257,8 +290,153 @@ static Expr *parse_expr_r(void) {
     return left;
 }
 
+/* Parse comparison expression: additive ((==|<|>) additive)* */
+static Expr *parse_expr_r(void) {
+    Expr *left = parse_additive();
+    if (perror_flag) return NULL;
+
+    while ((tokens[pidx].type == TOK_EQEQ || tokens[pidx].type == TOK_LT ||
+            tokens[pidx].type == TOK_GT) && !perror_flag) {
+        OpType op;
+        switch (tokens[pidx].type) {
+            case TOK_EQEQ: op = OP_IR_CMP_EQ; break;
+            case TOK_LT:   op = OP_IR_CMP_LT; break;
+            case TOK_GT:   op = OP_IR_CMP_GT; break;
+            default:       op = OP_IR_CMP_EQ; break;
+        }
+        pidx++;
+        Expr *right = parse_additive();
+        if (perror_flag) { expr_free(left); return NULL; }
+        left = create_binop(op, left, right);
+    }
+    return left;
+}
+
+/* Forward declare parse_stmt for mutual recursion */
+static Expr *parse_stmt(void);
+
+/* Parse a brace-enclosed block: { stmt1; stmt2; ... }
+ * Returns a NODE_BLOCK with statements in params array. */
+static Expr *parse_block(void) {
+    if (!expect(TOK_LBRACE)) return NULL;
+    Expr *block = create_block();
+
+    while (tokens[pidx].type != TOK_RBRACE && tokens[pidx].type != TOK_EOF && !perror_flag) {
+        Expr *s = parse_stmt();
+        if (perror_flag) { expr_free(block); return NULL; }
+        block_add_stmt(block, s);
+    }
+
+    if (!expect(TOK_RBRACE)) { expr_free(block); return NULL; }
+    return block;
+}
+
 static Expr *parse_stmt(void) {
     if (perror_flag) return NULL;
+
+    /* if statement: if (expr) { ... } [else { ... }] */
+    if (tokens[pidx].type == TOK_IF) {
+        pidx++; /* skip 'if' */
+        if (!expect(TOK_LPAREN)) return NULL;
+        Expr *cond = parse_expr_r();
+        if (perror_flag) return NULL;
+        if (!expect(TOK_RPAREN)) { expr_free(cond); return NULL; }
+
+        Expr *body = parse_block();
+        if (perror_flag) { expr_free(cond); return NULL; }
+
+        Expr *else_body = NULL;
+        if (tokens[pidx].type == TOK_ELSE) {
+            pidx++; /* skip 'else' */
+            else_body = parse_block();
+            if (perror_flag) { expr_free(cond); expr_free(body); return NULL; }
+        }
+
+        return create_if(cond, body, else_body);
+    }
+
+    /* while statement: while (expr) { ... } */
+    if (tokens[pidx].type == TOK_WHILE) {
+        pidx++; /* skip 'while' */
+        if (!expect(TOK_LPAREN)) return NULL;
+        Expr *cond = parse_expr_r();
+        if (perror_flag) return NULL;
+        if (!expect(TOK_RPAREN)) { expr_free(cond); return NULL; }
+
+        Expr *body = parse_block();
+        if (perror_flag) { expr_free(cond); return NULL; }
+
+        return create_while(cond, body);
+    }
+
+    /* for statement: for (init; cond; inc) { ... } */
+    if (tokens[pidx].type == TOK_FOR) {
+        pidx++; /* skip 'for' */
+        if (!expect(TOK_LPAREN)) return NULL;
+
+        /* init: either a var decl or an expression statement */
+        Expr *init = NULL;
+        if (tokens[pidx].type == TOK_INT_KW) {
+            /* int x = expr; */
+            pidx++;
+            if (tokens[pidx].type != TOK_IDENT) {
+                parser_error("expected variable name in for-init");
+                return NULL;
+            }
+            char *vname = strdup(token_names[pidx]);
+            pidx++;
+            if (!expect(TOK_EQ)) { free(vname); return NULL; }
+            Expr *init_expr = parse_expr_r();
+            if (perror_flag) { free(vname); return NULL; }
+            if (!expect(TOK_SEMI)) { free(vname); expr_free(init_expr); return NULL; }
+            init = create_var_decl(vname, init_expr);
+            free(vname);
+        } else {
+            init = parse_expr_r();
+            if (perror_flag) return NULL;
+            if (!expect(TOK_SEMI)) { expr_free(init); return NULL; }
+        }
+
+        /* cond */
+        Expr *cond = parse_expr_r();
+        if (perror_flag) { expr_free(init); return NULL; }
+        if (!expect(TOK_SEMI)) { expr_free(init); expr_free(cond); return NULL; }
+
+        /* increment: expression (may include ident = expr or ident++) */
+        Expr *inc = NULL;
+        if (tokens[pidx].type == TOK_IDENT) {
+            char *iname = strdup(token_names[pidx]);
+            pidx++;
+            if (tokens[pidx].type == TOK_EQ) {
+                pidx++;
+                Expr *rhs = parse_expr_r();
+                if (perror_flag) { free(iname); expr_free(init); expr_free(cond); return NULL; }
+                inc = create_assign(create_var(iname), rhs);
+            } else if (tokens[pidx].type == TOK_PLUS_PLUS) {
+                pidx++;
+                /* i++ -> i = i + 1 */
+                inc = create_assign(create_var(iname),
+                    create_binop(OP_IR_ADD, create_var(iname), create_const(1)));
+            } else {
+                /* just a variable expression */
+                pidx--;  /* put back; let parse_expr_r handle it */
+                pidx--;
+                inc = parse_expr_r();
+                if (perror_flag) { free(iname); expr_free(init); expr_free(cond); return NULL; }
+            }
+            free(iname);
+        } else {
+            inc = parse_expr_r();
+            if (perror_flag) { expr_free(init); expr_free(cond); return NULL; }
+        }
+
+        if (!expect(TOK_RPAREN)) { expr_free(init); expr_free(cond); expr_free(inc); return NULL; }
+
+        Expr *body = parse_block();
+        if (perror_flag) { expr_free(init); expr_free(cond); expr_free(inc); return NULL; }
+
+        return create_for(init, cond, inc, body);
+    }
 
     if (tokens[pidx].type == TOK_RETURN) {
         pidx++; /* skip 'return' */
@@ -268,7 +446,7 @@ static Expr *parse_stmt(void) {
         return create_return(expr);
     }
 
-    /* Variable declaration: int x = expr; or int *x = expr; */
+    /* Variable declaration: int x = expr; or int *x = expr; or int x[N]; */
     if (tokens[pidx].type == TOK_INT_KW) {
         pidx++; /* skip 'int' */
         int is_ptr = 0;
@@ -283,6 +461,42 @@ static Expr *parse_stmt(void) {
         }
         char *vname = strdup(token_names[pidx]);
         pidx++;
+
+        /* Array declaration: int x[N]; or int x[N] = {v1, v2, ...}; */
+        if (tokens[pidx].type == TOK_LBRACKET) {
+            pidx++; /* skip [ */
+            if (tokens[pidx].type != TOK_INT) {
+                parser_error("expected array size");
+                free(vname);
+                return NULL;
+            }
+            int arr_size = tokens[pidx].value;
+            pidx++;
+            if (!expect(TOK_RBRACKET)) { free(vname); return NULL; }
+
+            Expr **init_vals = NULL;
+            int init_count = 0;
+
+            /* Optional initializer: = { expr, expr, ... } */
+            if (tokens[pidx].type == TOK_EQ) {
+                pidx++; /* skip = */
+                if (!expect(TOK_LBRACE)) { free(vname); return NULL; }
+                while (tokens[pidx].type != TOK_RBRACE && tokens[pidx].type != TOK_EOF && !perror_flag) {
+                    init_count++;
+                    init_vals = (Expr **)realloc(init_vals, init_count * sizeof(Expr *));
+                    init_vals[init_count - 1] = parse_expr_r();
+                    if (perror_flag) { free(vname); return NULL; }
+                    if (tokens[pidx].type == TOK_COMMA) pidx++;
+                }
+                if (!expect(TOK_RBRACE)) { free(vname); return NULL; }
+            }
+
+            if (!expect(TOK_SEMI)) { free(vname); return NULL; }
+            Expr *decl = create_array_decl(vname, arr_size, init_vals, init_count);
+            free(vname);
+            return decl;
+        }
+
         if (!expect(TOK_EQ)) { free(vname); return NULL; }
         Expr *init = parse_expr_r();
         if (perror_flag) { free(vname); return NULL; }
@@ -292,11 +506,27 @@ static Expr *parse_stmt(void) {
         return decl;
     }
 
-    /* Assignment or expression statement: ident = expr; or *expr = expr; */
+    /* Assignment or expression statement: ident = expr; or ident[expr] = expr; or *expr = expr; */
     if (tokens[pidx].type == TOK_IDENT) {
         int saved = pidx;
         char *vname = strdup(token_names[pidx]);
         pidx++;
+
+        /* Array assignment: ident[expr] = expr; */
+        if (tokens[pidx].type == TOK_LBRACKET) {
+            pidx++; /* skip [ */
+            Expr *index = parse_expr_r();
+            if (perror_flag) { free(vname); return NULL; }
+            if (!expect(TOK_RBRACKET)) { free(vname); expr_free(index); return NULL; }
+            if (!expect(TOK_EQ)) { free(vname); expr_free(index); return NULL; }
+            Expr *rhs = parse_expr_r();
+            if (perror_flag) { free(vname); expr_free(index); return NULL; }
+            if (!expect(TOK_SEMI)) { free(vname); expr_free(index); expr_free(rhs); return NULL; }
+            Expr *arr_assign = create_array_assign(vname, index, rhs);
+            free(vname);
+            return arr_assign;
+        }
+
         if (tokens[pidx].type == TOK_EQ) {
             pidx++; /* skip '=' */
             Expr *rhs = parse_expr_r();
@@ -311,7 +541,7 @@ static Expr *parse_stmt(void) {
         pidx = saved;
     }
 
-    parser_error("expected statement (return, decl, or assign)");
+    parser_error("expected statement (return, decl, assign, if, while, or for)");
     return NULL;
 }
 
