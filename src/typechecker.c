@@ -50,6 +50,7 @@ const TypeSymbol *typechecker_lookup(const TypeChecker *tc, const char *name) {
 TypeDesc typechecker_infer(TypeChecker *tc, Expr *e) {
     TypeDesc unknown = {TYPE_UNKNOWN, 0};
     TypeDesc int_type = {TYPE_INT, 0};
+    TypeDesc trit_type = {TYPE_TRIT, 0};
 
     if (e == NULL) return unknown;
 
@@ -70,17 +71,21 @@ TypeDesc typechecker_infer(TypeChecker *tc, Expr *e) {
             TypeDesc lt = typechecker_infer(tc, e->left);
             TypeDesc rt = typechecker_infer(tc, e->right);
 
-            /* Arithmetic and comparison require int operands */
-            if (lt.kind != TYPE_INT && lt.kind != TYPE_UNKNOWN) {
-                tc_error(tc, e->type, "left operand of binary op is not int");
+            /* Arithmetic and comparison require int or trit operands */
+            if (lt.kind != TYPE_INT && lt.kind != TYPE_TRIT && lt.kind != TYPE_UNKNOWN) {
+                tc_error(tc, e->type, "left operand of binary op is not int or trit");
             }
-            if (rt.kind != TYPE_INT && rt.kind != TYPE_UNKNOWN) {
-                tc_error(tc, e->type, "right operand of binary op is not int");
+            if (rt.kind != TYPE_INT && rt.kind != TYPE_TRIT && rt.kind != TYPE_UNKNOWN) {
+                tc_error(tc, e->type, "right operand of binary op is not int or trit");
             }
 
             /* Comparison ops return int (0 or 1) */
             if (e->op == OP_IR_CMP_EQ || e->op == OP_IR_CMP_LT || e->op == OP_IR_CMP_GT) {
                 return int_type;
+            }
+            /* For now, operations on trits return trit */
+            if (lt.kind == TYPE_TRIT || rt.kind == TYPE_TRIT) {
+                return trit_type;
             }
             return int_type;
         }
@@ -223,6 +228,37 @@ static void check_node(TypeChecker *tc, Expr *e) {
             }
             /* Add to env */
             TypeDesc t = {TYPE_ARRAY, e->array_size};
+            typechecker_add_symbol(tc, e->name, t);
+            break;
+        }
+
+        case NODE_TRIT_VAR_DECL: {
+            /* Check initial value type */
+            if (e->left) {
+                typechecker_infer(tc, e->left);
+            }
+            /* Add to env */
+            TypeDesc t = {TYPE_TRIT, 0};
+            typechecker_add_symbol(tc, e->name, t);
+            break;
+        }
+
+        case NODE_TRIT_ARRAY_DECL: {
+            /* Check initializer types */
+            for (int i = 0; i < e->param_count; i++) {
+                TypeDesc vt = typechecker_infer(tc, e->params[i]);
+                if (vt.kind != TYPE_TRIT && vt.kind != TYPE_INT && vt.kind != TYPE_UNKNOWN) {
+                    tc_error(tc, e->type, "trit array initializer %d is not trit or int", i);
+                }
+            }
+            /* Check init count vs array size */
+            if (e->param_count > e->array_size) {
+                tc_error(tc, e->type,
+                    "too many initializers for trit array '%s' (size %d, got %d)",
+                    e->name, e->array_size, e->param_count);
+            }
+            /* Add to env */
+            TypeDesc t = {TYPE_TRIT_ARRAY, e->array_size};
             typechecker_add_symbol(tc, e->name, t);
             break;
         }

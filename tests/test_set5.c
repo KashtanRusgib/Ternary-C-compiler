@@ -35,8 +35,8 @@ TEST(test_syscall_write) {
         OP_HALT
     };
     vm_run(prog, sizeof(prog));
-    /* stub returns len=5 as result, printed by HALT */
-    ASSERT_TRUE(1);
+    /* stub returns len=5 as result */
+    ASSERT_EQ(vm_get_result(), 5);
 }
 
 TEST(test_syscall_read) {
@@ -51,7 +51,7 @@ TEST(test_syscall_read) {
     };
     vm_run(prog, sizeof(prog));
     /* stub returns 0 bytes read */
-    ASSERT_TRUE(1);
+    ASSERT_EQ(vm_get_result(), 0);
 }
 
 TEST(test_syscall_mmap) {
@@ -63,8 +63,8 @@ TEST(test_syscall_mmap) {
         OP_HALT
     };
     vm_run(prog, sizeof(prog));
-    /* Returns base address (>= MEMORY_SIZE/2) */
-    ASSERT_TRUE(1);
+    /* Returns base address (MEMORY_SIZE/2 = 364 after reset) */
+    ASSERT_EQ(vm_get_result(), 364);
 }
 
 TEST(test_syscall_cap_send) {
@@ -78,7 +78,7 @@ TEST(test_syscall_cap_send) {
     };
     vm_run(prog, sizeof(prog));
     /* Returns 0 (success) */
-    ASSERT_TRUE(1);
+    ASSERT_EQ(vm_get_result(), 0);
 }
 
 TEST(test_syscall_cap_recv) {
@@ -91,7 +91,7 @@ TEST(test_syscall_cap_recv) {
     };
     vm_run(prog, sizeof(prog));
     /* Returns stub value 42 */
-    ASSERT_TRUE(1);
+    ASSERT_EQ(vm_get_result(), 42);
 }
 
 TEST(test_syscall_unknown) {
@@ -103,7 +103,7 @@ TEST(test_syscall_unknown) {
     };
     vm_run(prog, sizeof(prog));
     /* Returns -1 (unknown) */
-    ASSERT_TRUE(1);
+    ASSERT_EQ(vm_get_result(), -1);
 }
 
 /* ---- Capability high-level API ---- */

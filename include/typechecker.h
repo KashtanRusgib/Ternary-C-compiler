@@ -19,9 +19,9 @@
 /* Type kinds */
 typedef enum {
     TYPE_INT,       /* int */
-    TYPE_PTR,       /* int* */
-    TYPE_ARRAY,     /* int[N] */
-    TYPE_VOID,      /* void (for functions with no return) */
+    TYPE_TRIT,      /* trit */
+    TYPE_PTR,       /* int* or trit* */
+    TYPE_ARRAY,     /* int[N] or trit[N] */    TYPE_TRIT_ARRAY,/* trit[N] */    TYPE_VOID,      /* void (for functions with no return) */
     TYPE_UNKNOWN    /* Unresolved type */
 } TypeKind;
 

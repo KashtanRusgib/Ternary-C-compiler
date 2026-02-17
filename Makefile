@@ -9,7 +9,7 @@ VM_OBJS    = vm/ternary_vm.o
 LIB_OBJS   = src/parser.o src/codegen.o src/logger.o src/ir.o src/postfix_ir.o src/typechecker.o src/linker.o src/selfhost.o src/bootstrap.o $(VM_OBJS)
 
 # ---- Test binaries ----
-TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_sel4 test_integration test_memory test_set5 test_bootstrap test_sel4_verify test_hardware test_basic test_typechecker test_linker test_arrays test_selfhost
+TEST_BINS  = test_trit test_lexer test_parser test_codegen test_vm test_logger test_ir test_sel4 test_integration test_memory test_set5 test_bootstrap test_sel4_verify test_hardware test_basic test_typechecker test_linker test_arrays test_selfhost test_trit_edge_cases test_parser_fuzz test_performance test_hardware_simulation test_ternary_edge_cases test_ternary_arithmetic_comprehensive
 
 # ---- Default target ----
 all: ternary_compiler vm_test $(TEST_BINS)
@@ -80,6 +80,33 @@ test_arrays: tests/test_arrays.o $(LIB_OBJS)
 test_selfhost: tests/test_selfhost.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
+test_trit_edge_cases: tests/test_trit_edge_cases.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_parser_fuzz: tests/test_parser_fuzz.o src/parser.o src/ir.o src/logger.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_performance: tests/test_performance.o $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_hardware_simulation: tests/test_hardware_simulation.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_ternary_edge_cases: tests/test_ternary_edge_cases.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+test_ternary_arithmetic_comprehensive: tests/test_ternary_arithmetic_comprehensive.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+# test_parser_lexer_fuzz: tests/test_parser_lexer_fuzz.o src/parser.o src/ir.o src/logger.o
+#	$(CC) $(CFLAGS) -o $@ $^
+
+# test_compiler_code_generation_bugs: tests/test_compiler_code_generation_bugs.o src/parser.o src/codegen.o src/ir.o src/logger.o $(VM_OBJS)
+#	$(CC) $(CFLAGS) -o $@ $^
+
+# test_error_recovery: tests/test_error_recovery.o $(LIB_OBJS)
+#	$(CC) $(CFLAGS) -o $@ $^
+
 # ---- Generic rule for .c -> .o ----
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -117,6 +144,15 @@ tests/test_linker.o:      tests/test_linker.c include/test_harness.h include/lin
 tests/test_arrays.o:      tests/test_arrays.c include/test_harness.h include/bootstrap.h include/vm.h include/ir.h include/parser.h
 src/selfhost.o:           src/selfhost.c include/selfhost.h include/bootstrap.h include/vm.h include/logger.h
 tests/test_selfhost.o:    tests/test_selfhost.c include/test_harness.h include/selfhost.h include/bootstrap.h include/vm.h
+tests/test_trit_edge_cases.o: tests/test_trit_edge_cases.c include/test_harness.h include/ternary.h
+tests/test_parser_fuzz.o: tests/test_parser_fuzz.c include/test_harness.h include/parser.h
+tests/test_performance.o: tests/test_performance.c include/test_harness.h include/ternary.h
+tests/test_hardware_simulation.o: tests/test_hardware_simulation.c include/test_harness.h include/ternary.h include/verilog_emit.h
+tests/test_ternary_edge_cases.o: tests/test_ternary_edge_cases.c include/test_harness.h include/ternary.h
+tests/test_ternary_arithmetic_comprehensive.o: tests/test_ternary_arithmetic_comprehensive.c include/test_harness.h include/ternary.h
+# tests/test_parser_lexer_fuzz.o: tests/test_parser_lexer_fuzz.c include/test_harness.h include/parser.h
+# tests/test_compiler_code_generation_bugs.o: tests/test_compiler_code_generation_bugs.c include/test_harness.h include/codegen.h
+# tests/test_error_recovery.o: tests/test_error_recovery.c include/test_harness.h
 
 # ---- Test targets ----
 test: $(TEST_BINS)

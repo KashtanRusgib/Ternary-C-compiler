@@ -249,6 +249,21 @@ static void emit_ast(PostfixSeq *seq, Expr *e) {
             emit_ast(seq, e->right);
             pf_emit(seq, PF_STORE_VAR, 0, e->name);
             break;
+
+        case NODE_TRIT_VAR_DECL:
+            if (e->left) emit_ast(seq, e->left);
+            pf_emit(seq, PF_STORE_VAR, 0, e->name);
+            break;
+
+        case NODE_TRIT_ARRAY_DECL:
+            /* Emit initializers as STORE_VAR with computed names */
+            for (int i = 0; i < e->param_count; i++) {
+                emit_ast(seq, e->params[i]);
+                char slotname[72];
+                snprintf(slotname, sizeof(slotname), "%s[%d]", e->name, i);
+                pf_emit(seq, PF_STORE_VAR, i, slotname);
+            }
+            break;
     }
 }
 

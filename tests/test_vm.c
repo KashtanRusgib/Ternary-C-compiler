@@ -306,19 +306,22 @@ TEST(test_vm_ternary_neg) {
 
 TEST(test_vm_consensus) {
     vm_memory_reset();
-    /* consensus(5, 3): trit-level min of balanced ternary representations */
+    /* consensus(5, 3): trit-level min of balanced ternary representations
+     * 5 = [-1,-1,+1,...], 3 = [0,+1,0,...]
+     * min per trit: [-1,-1,0,...] = -1 - 3 = -4 */
     unsigned char code[] = {OP_PUSH, 5, OP_PUSH, 3, OP_CONSENSUS, OP_HALT};
     run_and_capture(code, sizeof(code));
-    /* The result depends on trit-level min; let's just verify it runs */
-    ASSERT_TRUE(1);
+    ASSERT_EQ(vm_get_result(), -4);
 }
 
 TEST(test_vm_accept_any) {
     vm_memory_reset();
-    /* accept_any(5, 3): trit-level max */
+    /* accept_any(5, 3): trit-level max
+     * 5 = [-1,-1,+1,...], 3 = [0,+1,0,...]
+     * max per trit: [0,+1,+1,...] = 0 + 3 + 9 = 12 */
     unsigned char code[] = {OP_PUSH, 5, OP_PUSH, 3, OP_ACCEPT_ANY, OP_HALT};
     run_and_capture(code, sizeof(code));
-    ASSERT_TRUE(1);
+    ASSERT_EQ(vm_get_result(), 12);
 }
 
 /* ====== Phase 3: BRZ/BRN/BRP structured branching ====== */

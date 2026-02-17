@@ -35,7 +35,10 @@ typedef enum {
     /* Phase 3: Arrays */
     NODE_ARRAY_DECL,  /* int arr[N] or int arr[N] = {init} */
     NODE_ARRAY_ACCESS,/* arr[index] — read */
-    NODE_ARRAY_ASSIGN /* arr[index] = expr — write */
+    NODE_ARRAY_ASSIGN,/* arr[index] = expr — write */
+    /* Phase 3: Trit types */
+    NODE_TRIT_VAR_DECL,  /* trit x = expr */
+    NODE_TRIT_ARRAY_DECL /* trit arr[N] or trit arr[N] = {init} */
 } NodeType;
 
 /* Binary operator types */

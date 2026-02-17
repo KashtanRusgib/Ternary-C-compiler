@@ -39,6 +39,8 @@ void tokenize(const char *source) {
                 tokens[token_idx++] = (Token){TOK_ELSE, 0};
             } else if (len == 3 && strncmp(&source[start], "int", 3) == 0) {
                 tokens[token_idx++] = (Token){TOK_INT_KW, 0};
+            } else if (len == 4 && strncmp(&source[start], "trit", 4) == 0) {
+                tokens[token_idx++] = (Token){TOK_TRIT_KW, 0};
             } else if (len == 6 && strncmp(&source[start], "return", 6) == 0) {
                 tokens[token_idx++] = (Token){TOK_RETURN, 0};
             } else {
@@ -502,6 +504,66 @@ static Expr *parse_stmt(void) {
         if (perror_flag) { free(vname); return NULL; }
         if (!expect(TOK_SEMI)) { free(vname); expr_free(init); return NULL; }
         Expr *decl = create_var_decl(vname, init);
+        free(vname);
+        return decl;
+    }
+
+    /* Variable declaration: trit x = expr; or trit *x = expr; or trit x[N]; */
+    if (tokens[pidx].type == TOK_TRIT_KW) {
+        pidx++; /* skip 'trit' */
+        int is_ptr = 0;
+        if (tokens[pidx].type == TOK_MUL) {
+            is_ptr = 1;
+            pidx++; /* skip '*' */
+        }
+        (void)is_ptr; /* type tracking deferred to Phase 3 */
+        if (tokens[pidx].type != TOK_IDENT) {
+            parser_error("expected variable name in declaration");
+            return NULL;
+        }
+        char *vname = strdup(token_names[pidx]);
+        pidx++;
+
+        /* Array declaration: trit x[N]; or trit x[N] = {v1, v2, ...}; */
+        if (tokens[pidx].type == TOK_LBRACKET) {
+            pidx++; /* skip [ */
+            if (tokens[pidx].type != TOK_INT) {
+                parser_error("expected array size");
+                free(vname);
+                return NULL;
+            }
+            int arr_size = tokens[pidx].value;
+            pidx++;
+            if (!expect(TOK_RBRACKET)) { free(vname); return NULL; }
+
+            Expr **init_vals = NULL;
+            int init_count = 0;
+
+            /* Optional initializer: = { expr, expr, ... } */
+            if (tokens[pidx].type == TOK_EQ) {
+                pidx++; /* skip = */
+                if (!expect(TOK_LBRACE)) { free(vname); return NULL; }
+                while (tokens[pidx].type != TOK_RBRACE && tokens[pidx].type != TOK_EOF && !perror_flag) {
+                    init_count++;
+                    init_vals = (Expr **)realloc(init_vals, init_count * sizeof(Expr *));
+                    init_vals[init_count - 1] = parse_expr_r();
+                    if (perror_flag) { free(vname); return NULL; }
+                    if (tokens[pidx].type == TOK_COMMA) pidx++;
+                }
+                if (!expect(TOK_RBRACE)) { free(vname); return NULL; }
+            }
+
+            if (!expect(TOK_SEMI)) { free(vname); return NULL; }
+            Expr *decl = create_trit_array_decl(vname, arr_size, init_vals, init_count);
+            free(vname);
+            return decl;
+        }
+
+        if (!expect(TOK_EQ)) { free(vname); return NULL; }
+        Expr *init = parse_expr_r();
+        if (perror_flag) { free(vname); return NULL; }
+        if (!expect(TOK_SEMI)) { free(vname); expr_free(init); return NULL; }
+        Expr *decl = create_trit_var_decl(vname, init);
         free(vname);
         return decl;
     }

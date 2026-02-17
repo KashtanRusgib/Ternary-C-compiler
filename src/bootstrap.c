@@ -324,6 +324,39 @@ static void emit_expr(Expr *e) {
             }
             break;
         }
+
+        case NODE_TRIT_VAR_DECL: {
+            /* trit x = expr; -> compute expr, store at x's offset */
+            int off = symtab_add(&symtab, e->name, 0);
+            if (off >= 0 && e->left) {
+                b_emit(OP_PUSH);
+                b_emit((unsigned char)off);
+                emit_expr(e->left);
+                b_emit(OP_STORE);
+            }
+            break;
+        }
+
+        case NODE_TRIT_ARRAY_DECL: {
+            /* trit arr[N]; allocate N contiguous memory slots */
+            int base = symtab_add(&symtab, e->name, 0);
+            if (base >= 0) {
+                /* Reserve array_size - 1 additional slots */
+                for (int i = 1; i < e->array_size; i++) {
+                    char slotname[72];
+                    snprintf(slotname, sizeof(slotname), "%s[%d]", e->name, i);
+                    symtab_add(&symtab, slotname, 0);
+                }
+                /* Emit initializers if present */
+                for (int i = 0; i < e->param_count && i < e->array_size; i++) {
+                    b_emit(OP_PUSH);
+                    b_emit((unsigned char)(base + i));
+                    emit_expr(e->params[i]);
+                    b_emit(OP_STORE);
+                }
+            }
+            break;
+        }
     }
 }
 

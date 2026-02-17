@@ -33,6 +33,7 @@ typedef enum {
     TOK_IF,         /* if */
     TOK_ELSE,       /* else */
     TOK_INT_KW,     /* int (keyword, distinct from TOK_INT literal) */
+    TOK_TRIT_KW,    /* trit (keyword for ternary type) */
     TOK_RETURN,     /* return */
 
     /* Brackets */

@@ -170,6 +170,17 @@ void optimize(Expr *e) {
             if (e->left) optimize(e->left);  /* index */
             if (e->right) optimize(e->right); /* value */
             break;
+
+        case NODE_TRIT_VAR_DECL:
+            if (e->left) optimize(e->left);
+            break;
+
+        case NODE_TRIT_ARRAY_DECL:
+            /* Optimize init values */
+            for (int i = 0; i < e->param_count; i++) {
+                optimize(e->params[i]);
+            }
+            break;
     }
 }
 
@@ -334,5 +345,24 @@ Expr *create_array_assign(const char *name, Expr *index, Expr *value) {
     e->name = strdup(name);
     e->left = index;
     e->right = value;
+    return e;
+}
+/* === Phase 3: Trit constructors === */
+
+Expr *create_trit_var_decl(const char *name, Expr *init) {
+    Expr *e = alloc_expr();
+    e->type = NODE_TRIT_VAR_DECL;
+    e->name = strdup(name);
+    e->left = init;
+    return e;
+}
+
+Expr *create_trit_array_decl(const char *name, int size, Expr **init_values, int init_count) {
+    Expr *e = alloc_expr();
+    e->type = NODE_TRIT_ARRAY_DECL;
+    e->name = strdup(name);
+    e->array_size = size;
+    e->params = init_values;
+    e->param_count = init_count;
     return e;
 }
