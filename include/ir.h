@@ -15,7 +15,8 @@
 #include <string.h>
 
 /* AST node types */
-typedef enum {
+typedef enum
+{
     NODE_CONST,     /* Integer constant */
     NODE_VAR,       /* Variable reference */
     NODE_BINOP,     /* Binary operation */
@@ -28,33 +29,38 @@ typedef enum {
     NODE_ASSIGN,    /* Assignment: lhs = rhs */
     NODE_VAR_DECL,  /* Variable declaration: int x = expr */
     /* Phase 3: Structured control flow (Setun-70/ALGOL-60 inspired) */
-    NODE_IF,        /* if (condition) { body } [else { else_body }] */
-    NODE_WHILE,     /* while (condition) { body } */
-    NODE_FOR,       /* for (init; condition; increment) { body } */
-    NODE_BLOCK,     /* { stmt1; stmt2; ... } — statement block */
+    NODE_IF,    /* if (condition) { body } [else { else_body }] */
+    NODE_WHILE, /* while (condition) { body } */
+    NODE_FOR,   /* for (init; condition; increment) { body } */
+    NODE_BLOCK, /* { stmt1; stmt2; ... } — statement block */
     /* Phase 3: Arrays */
-    NODE_ARRAY_DECL,  /* int arr[N] or int arr[N] = {init} */
-    NODE_ARRAY_ACCESS,/* arr[index] — read */
-    NODE_ARRAY_ASSIGN,/* arr[index] = expr — write */
+    NODE_ARRAY_DECL,   /* int arr[N] or int arr[N] = {init} */
+    NODE_ARRAY_ACCESS, /* arr[index] — read */
+    NODE_ARRAY_ASSIGN, /* arr[index] = expr — write */
     /* Phase 3: Trit types */
     NODE_TRIT_VAR_DECL,  /* trit x = expr */
     NODE_TRIT_ARRAY_DECL /* trit arr[N] or trit arr[N] = {init} */
 } NodeType;
 
 /* Binary operator types */
-typedef enum {
+typedef enum
+{
     OP_IR_ADD,
     OP_IR_MUL,
     OP_IR_SUB,
     /* Phase 3: Comparison & ternary logic ops */
-    OP_IR_CMP_EQ,   /* a == b */
-    OP_IR_CMP_LT,   /* a < b */
-    OP_IR_CMP_GT,   /* a > b */
-    OP_IR_NEG       /* Ternary negation (unary) */
+    OP_IR_DIV,
+    OP_IR_MOD,
+    /* Phase 3: Comparison & ternary logic ops */
+    OP_IR_CMP_EQ, /* a == b */
+    OP_IR_CMP_LT, /* a < b */
+    OP_IR_CMP_GT, /* a > b */
+    OP_IR_NEG     /* Ternary negation (unary) */
 } OpType;
 
 /* Expression AST node */
-typedef struct Expr {
+typedef struct Expr
+{
     NodeType type;
     int val;              /* For NODE_CONST */
     char *name;           /* For NODE_VAR, NODE_FUNC_DEF, NODE_FUNC_CALL */
@@ -65,11 +71,11 @@ typedef struct Expr {
     struct Expr **params; /* FUNC_DEF: param list / FUNC_CALL: args / PROGRAM: funcs */
     int param_count;      /* Number of params / args / funcs */
     /* Phase 3: Structured control flow (Setun-70 inspired) */
-    struct Expr *condition;  /* For NODE_IF, NODE_WHILE, NODE_FOR: condition expr */
-    struct Expr *else_body;  /* For NODE_IF: else branch (NULL if no else) */
-    struct Expr *increment;  /* For NODE_FOR: increment expression */
+    struct Expr *condition; /* For NODE_IF, NODE_WHILE, NODE_FOR: condition expr */
+    struct Expr *else_body; /* For NODE_IF: else branch (NULL if no else) */
+    struct Expr *increment; /* For NODE_FOR: increment expression */
     /* Phase 3: Arrays */
-    int array_size;           /* For NODE_ARRAY_DECL: number of elements */
+    int array_size; /* For NODE_ARRAY_DECL: number of elements */
 } Expr;
 
 /* Create a constant node */
